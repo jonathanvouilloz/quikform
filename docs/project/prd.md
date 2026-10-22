@@ -58,6 +58,10 @@ Par ordre de priorité :
 - Données personnelles (nLPD, RGPD) : une mention de confidentialité par formulaire, seulement les champs nécessaires ; réponses supprimées automatiquement après 12 mois par défaut, durée modifiable par formulaire.
 - Le format d'un formulaire doit rester stable : changer la bibliothèque d'affichage ne doit pas obliger à réécrire les formulaires.
 
+## Après la v1
+
+- **Remplacer Web3Forms et Resend** pour les sites statiques de Jon (idée du 2026-10-22) : une adresse qui reçoit les envois de formulaires d'autres sites (Astro, etc.), les enregistre, alerte Telegram et les transmet par mail, plus la réponse automatique au client. Envoi par le compte SMTP de chaque domaine (Infomaniak pour Wildcat), jamais depuis l'IP du serveur. But : plus de limite de domaines du plan gratuit Resend. Premier cas : le formulaire du site Wildcat, qui passe aujourd'hui par Resend ; la bascule ne touche pas l'assistant Wildcat, qui lit la boîte mail.
+
 ## Questions ouvertes
 
 Aucune à ce stade.
