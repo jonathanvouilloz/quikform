@@ -61,7 +61,8 @@ test("token is read from the project's .env, never from project.json", () => {
   expect(b.telegram).toBeUndefined();
   expect(b.loadErrors.join()).toContain("TELEGRAM_BOT_TOKEN");
   expect(ps.find((p) => p.slug === "c")).toBeUndefined();
-  expect(errors.join()).toContain("c");
+  expect(errors.join()).toContain(`skipping project "c"`);
+  expect(errors.join()).toContain("unrecognized keys botToken");
 });
 
 test("a project without project.json is skipped, others load", () => {

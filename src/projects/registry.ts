@@ -70,7 +70,7 @@ export function loadProjects(home: string): Project[] {
     let config: z.output<typeof ProjectConfig>;
     try {
       const parsed = z.safeParse(ProjectConfig, JSON.parse(fs.readFileSync(path.join(dir, "project.json"), "utf8")));
-      if (!parsed.success) throw new Error(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
+      if (!parsed.success) throw new Error(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.code === "unrecognized_keys" ? `unrecognized keys ${i.keys.join(", ")}` : i.message}`).join("; "));
       config = parsed.data;
     } catch (e) {
       console.error(`quikform: skipping project "${slug}": ${reason(e)}`);
