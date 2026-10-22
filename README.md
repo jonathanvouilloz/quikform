@@ -32,6 +32,9 @@ Minimal example (see `examples/demo/` for steps, conditions and choices):
       "id": "contact",
       "lang": "en",
       "title": "Contact us",
+      "privacy": "Your answers are only used to reply to you.",
+      "access": "public",
+      "notify": { "telegram": false },
       "thankYou": { "title": "Thank you", "body": "We will answer soon." },
       "steps": [
         { "fields": [
