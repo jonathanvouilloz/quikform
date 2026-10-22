@@ -6,6 +6,9 @@ export const HONEYPOT = "website";
 // The server ignores answers sent sooner than this after the page was served; the client waits it out.
 export const MIN_AGE_MS = 3000;
 
+// A field id is a key of plain objects in the page and the validator; inherited names would resolve to Object.prototype.
+const RESERVED_IDS = [HONEYPOT, ...Object.getOwnPropertyNames(Object.prototype)];
+
 const CHOICE_TYPES = ["single_choice", "multiple_choice"];
 
 const FIELD_TYPES = [
@@ -28,7 +31,7 @@ const ShowIf = z.strictObject({
 
 const Field = z
   .strictObject({
-    id: z.string().check(z.regex(ID), z.refine((id) => id !== HONEYPOT, { error: `"${HONEYPOT}" is reserved` })),
+    id: z.string().check(z.regex(ID), z.refine((id) => !RESERVED_IDS.includes(id), { error: (iss) => `"${iss.input}" is reserved` })),
     type: z.enum(FIELD_TYPES),
     label: z.string().check(z.minLength(1)),
     help: z.optional(z.string()),
@@ -104,5 +107,9 @@ export function parseDefinition(
 ): { ok: true; value: FormDefinition } | { ok: false; errors: string[] } {
   const r = z.safeParse(FormDefinitionSchema, input);
   if (r.success) return { ok: true, value: r.data };
-  return { ok: false, errors: r.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`) };
+  return { ok: false, errors: r.error.issues.map(formatIssue) };
 }
+
+/** One readable line per issue: zod/mini says "Invalid input" for unknown keys and leaves a root path empty. */
+export const formatIssue = (i: z.core.$ZodIssue) =>
+  `${i.path.join(".") || "(root)"}: ${i.code === "unrecognized_keys" ? `unrecognized keys ${i.keys.join(", ")}` : i.message}`;

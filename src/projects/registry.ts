@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as z from "zod/mini";
-import { parseDefinition, type FormDefinition } from "../definition/schema";
+import { formatIssue, parseDefinition, type FormDefinition } from "../definition/schema";
 import type { Brand } from "../render/page";
 import { openProjectDb, type ProjectDb } from "../store/db";
 
@@ -63,7 +63,7 @@ function loadForms(dir: string, loadErrors: string[]): Map<string, FormDefinitio
 // Throws when project.json is missing or invalid. An already-open db can be passed in (reload keeps its handle).
 export function loadProject(dir: string, db?: ProjectDb): Project {
   const parsed = z.safeParse(ProjectConfig, JSON.parse(fs.readFileSync(path.join(dir, "project.json"), "utf8")));
-  if (!parsed.success) throw new Error(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.code === "unrecognized_keys" ? `unrecognized keys ${i.keys.join(", ")}` : i.message}`).join("; "));
+  if (!parsed.success) throw new Error(parsed.error.issues.map(formatIssue).join("; "));
   const config = parsed.data;
   const loadErrors: string[] = [];
   let telegram: Project["telegram"];
@@ -99,8 +99,11 @@ export function syncProjects(home: string, projects: Project[], seen: Map<string
     const i = projects.findIndex((p) => p.slug === slug);
     try {
       const p = loadProject(dir, projects[i]?.db);
-      if (i >= 0) projects[i] = p;
-      else projects.push(p);
+      if (i >= 0) {
+        projects[i] = p;
+        // serve prints the first load's errors; a reload's would otherwise go unseen.
+        for (const e of p.loadErrors) console.error(`quikform: project "${slug}": ${e}`);
+      } else projects.push(p);
     } catch (e) {
       console.error(`quikform: ${i >= 0 ? "keeping previous version of" : "skipping"} project "${slug}": ${reason(e)}`);
     }

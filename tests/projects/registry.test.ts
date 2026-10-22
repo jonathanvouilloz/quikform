@@ -95,15 +95,22 @@ test("syncProjects loads, reloads in place keeping the db handle, drops removed 
 
   fs.writeFileSync(path.join(h, "projects/a/forms/second.json"), JSON.stringify({ ...minimal, id: "second" }));
   fs.utimesSync(path.join(h, "projects/a/forms"), new Date(), new Date(Date.now() + 5000));
+  fs.writeFileSync(path.join(h, "projects/a/forms/broken.json"), "{nope");
+  const logged: string[] = [];
+  const log = console.error;
+  console.error = (m: string) => void logged.push(m);
   syncProjects(h, projects, seen);
+  console.error = log;
   expect(projects).toHaveLength(1);
   expect(projects[0]!.forms.size).toBe(2);
   expect(projects[0]!.db).toBe(db);
+  // Load errors of a reload are logged, one line each.
+  expect(logged).toHaveLength(1);
+  expect(logged[0]).toStartWith('quikform: project "a": forms/broken.json: ');
 
   // A broken project.json keeps the previous good version.
   fs.writeFileSync(path.join(h, "projects/a/project.json"), "{nope");
   fs.utimesSync(path.join(h, "projects/a/project.json"), new Date(), new Date(Date.now() + 9000));
-  const log = console.error;
   console.error = () => {};
   syncProjects(h, projects, seen);
   console.error = log;

@@ -89,3 +89,16 @@ test("rejects malformed ids and non-object input", () => {
   expect(errorsOf(d).join("\n")).toContain("id");
   expect(errorsOf(null).length).toBeGreaterThan(0);
 });
+
+test("unknown keys are named, a root issue reads (root)", () => {
+  expect(errorsOf({ ...clone(), colour: "red" })).toEqual(["(root): unrecognized keys colour"]);
+  const d = clone();
+  d.steps[0].fields[0].lable = "x";
+  expect(errorsOf(d)).toEqual(["steps.0.fields.0: unrecognized keys lable"]);
+});
+
+test("rejects constructor as a field id", () => {
+  const d = clone();
+  d.steps[0].fields[0].id = "constructor";
+  expect(errorsOf(d)).toEqual([`steps.0.fields.0.id: "constructor" is reserved`]);
+});
