@@ -30,3 +30,6 @@ Pris pendant l'exécution par sous-agents, sans Jon ; à relire.
 - Mention de confidentialité placée avant le bouton d'envoi (le plan disait « sous ») : lue avant d'envoyer et visible au-dessus de la barre collée en bas sur téléphone.
 - Le navigateur retient un envoi fait moins de 3 s après le chargement, et le brouillon ne s'efface que sur la page de remerciement : aucune réponse perdue en silence. La limite de 3 s du serveur reste inchangée.
 - Alertes Telegram : une seule vidange de la file à la fois par base, pour ne jamais envoyer une alerte en double. Une alerte peut attendre jusqu'à 30 s.
+
+## 2026-10-22 — Accords de Jon pour la tâche 10
+Jon autorise le rechargement de Caddy pour ajouter `formulaire.wildcatmuaythai.com` (`caddy validate` d'abord). Licence MIT, copyright « quikform contributors ».
