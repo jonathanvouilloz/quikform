@@ -133,7 +133,7 @@ test("serve refuses a missing or short secret without echoing it", () => {
   expect(qf("", ["serve"], { QUIKFORM_HOME: "", QUIKFORM_SECRET: "x".repeat(40) }).code).toBe(1);
 });
 
-test("compiled binary serves /_qf/app.js with the bytes of dist/app.js and exits 0 on SIGTERM", async () => {
+test("compiled binary serves /_qf/app.js and a font with their bytes, and exits 0 on SIGTERM", async () => {
   const home = setup();
   const bin = path.join(tmp(), "quikform");
   const b = Bun.spawnSync(["bun", "build", "--compile", "src/cli/main.ts", "--outfile", bin], { cwd: root });
@@ -146,6 +146,10 @@ test("compiled binary serves /_qf/app.js with the bytes of dist/app.js and exits
     expect(port).toBeDefined();
     const res = await fetch(`http://127.0.0.1:${port}/_qf/app.js`);
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(new Uint8Array(fs.readFileSync(path.join(root, "dist/app.js"))));
+    const font = "plus-jakarta-sans-latin-wght-normal.woff2";
+    const f = await fetch(`http://127.0.0.1:${port}/_qf/fonts/${font}`);
+    expect(f.headers.get("content-type")).toBe("font/woff2");
+    expect(new Uint8Array(await f.arrayBuffer())).toEqual(new Uint8Array(fs.readFileSync(path.join(root, "src/render/fonts", font))));
     proc.kill("SIGTERM");
     expect(await proc.exited).toBe(0);
   } finally {
@@ -165,6 +169,50 @@ test("serve logs a failed reload and keeps running", async () => {
     proc.kill();
     await proc.exited;
     expect(await new Response(proc.stderr).text()).toStartWith("quikform: reload failed: ");
+  } finally {
+    proc.kill();
+  }
+});
+
+test("serve exits 0 on a SIGTERM sent as soon as it says it is listening", async () => {
+  const home = setup();
+  for (let i = 0; i < 5; i++) {
+    const proc = Bun.spawn(["bun", path.join(root, "src/cli/main.ts"), "serve", "--port", "0"], {
+      env: { PATH: process.env.PATH!, QUIKFORM_HOME: home, QUIKFORM_SECRET: "s".repeat(40) }, stdout: "pipe", stderr: "pipe",
+    });
+    try {
+      expect(await untilListening(proc)).toContain("listening on");
+      proc.kill("SIGTERM");
+      expect(await proc.exited).toBe(0);
+    } finally {
+      proc.kill();
+    }
+  }
+});
+
+test("purge: a failing project is logged and the others are still purged", async () => {
+  const home = setup();
+  expect(qf(home, ["project", "init", "zeta", "--domain", "z.test"]).code).toBe(0);
+  const { openProjectDb } = await import("../../src/store/db");
+  for (const slug of ["acme", "zeta"]) {
+    const db = openProjectDb(path.join(home, "projects", slug, "data.sqlite"));
+    db.insertResponse({ submissionId: crypto.randomUUID(), formId: "a", formVersion: 1, values: {}, createdAt: new Date(0) });
+    db.close();
+  }
+  const { Database } = await import("bun:sqlite");
+  const raw = new Database(path.join(home, "projects/acme/data.sqlite"));
+  raw.run("CREATE TRIGGER no_delete BEFORE DELETE ON responses BEGIN SELECT RAISE(ABORT, 'locked'); END");
+  raw.close();
+  const proc = Bun.spawn(["bun", path.join(root, "src/cli/main.ts"), "serve", "--port", "0"], {
+    env: { PATH: process.env.PATH!, QUIKFORM_HOME: home, QUIKFORM_SECRET: "s".repeat(40) }, stdout: "pipe", stderr: "pipe",
+  });
+  try {
+    const out = await untilListening(proc);
+    expect(out).toContain("purged 1 responses older than 12 months (project zeta)");
+    proc.kill();
+    await proc.exited;
+    const err = (await new Response(proc.stderr).text()).trim().split("\n");
+    expect(err).toEqual(["quikform: purge failed (project acme): locked"]);
   } finally {
     proc.kill();
   }

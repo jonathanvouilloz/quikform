@@ -61,8 +61,9 @@ export function cutoff(now: Date, months: number): Date {
 // Timestamps are stored as integer milliseconds since the epoch (UTC).
 export function openProjectDb(path: string): ProjectDb {
   const db = new Database(path);
-  db.run("PRAGMA journal_mode = WAL");
+  // Timeout first: switching to WAL itself needs a lock another process may hold.
   db.run("PRAGMA busy_timeout = 5000");
+  db.run("PRAGMA journal_mode = WAL");
   db.run(`CREATE TABLE IF NOT EXISTS responses (
     id INTEGER PRIMARY KEY,
     submission_id TEXT NOT NULL UNIQUE,

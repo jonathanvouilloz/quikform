@@ -29,9 +29,15 @@ test("an invalid form file is skipped, listed in loadErrors, other forms still l
     "a/forms/other.json": minimal, // id "contact" != filename
     "a/forms/bad-json.json": "{nope",
   });
+  const logged: string[] = [];
+  const log = console.error;
+  console.error = (m: string) => void logged.push(m);
   const [p] = loadProjects(h);
+  console.error = log;
   expect([...p!.forms.keys()]).toEqual(["contact"]);
   expect(p!.loadErrors).toHaveLength(3);
+  // Logged once each, on the first load.
+  expect(logged).toEqual(p!.loadErrors.map((e) => `quikform: project "a": ${e}`));
   expect(p!.retentionMonths).toBe(12);
 });
 
@@ -116,9 +122,16 @@ test("syncProjects loads, reloads in place keeping the db handle, drops removed 
   console.error = log;
   expect(projects[0]!.forms.size).toBe(2);
 
-  fs.mkdirSync(path.join(h, "projects/b"));
+  fs.mkdirSync(path.join(h, "projects/b/forms"), { recursive: true });
   fs.writeFileSync(path.join(h, "projects/b/project.json"), JSON.stringify(pj));
+  fs.writeFileSync(path.join(h, "projects/b/forms/broken.json"), "{nope");
+  logged.length = 0;
+  console.error = (m: string) => void logged.push(m);
   syncProjects(h, projects, seen);
+  console.error = log;
+  // A project added while serve runs logs its load errors too.
+  expect(logged).toHaveLength(1);
+  expect(logged[0]).toStartWith('quikform: project "b": forms/broken.json: ');
   expect(projects.map((p) => p.slug).sort()).toEqual(["a", "b"]);
 
   fs.rmSync(path.join(h, "projects/b"), { recursive: true });

@@ -124,9 +124,14 @@ function projectInit(args: string[]) {
   console.log(`ok project ${slug} created in ${dir}`);
 }
 
+// One project's failure must not skip the others.
 function purge(projects: Project[]) {
   for (const p of projects) {
-    console.log(`purged ${p.db.purgeOlderThan(cutoff(new Date(), p.retentionMonths))} responses older than ${p.retentionMonths} months (project ${p.slug})`);
+    try {
+      console.log(`purged ${p.db.purgeOlderThan(cutoff(new Date(), p.retentionMonths))} responses older than ${p.retentionMonths} months (project ${p.slug})`);
+    } catch (e) {
+      console.error(`quikform: purge failed (project ${p.slug}): ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 }
 
@@ -147,6 +152,10 @@ function serve(args: string[]) {
   const secret = process.env.QUIKFORM_SECRET ?? "";
   if (secret.length < 32) throw new Fail("QUIKFORM_SECRET must be set to at least 32 characters");
 
+  // Before listening, so a signal right after start exits 0. Handlers run on the event loop, once serve() has returned.
+  process.on("SIGTERM", () => stop());
+  process.on("SIGINT", () => stop());
+
   const projects: Project[] = [];
   const seen = new Map<string, string>();
   const reload = guarded("reload", () => syncProjects(h, projects, seen));
@@ -155,10 +164,8 @@ function serve(args: string[]) {
   purgeAll();
   const server = Bun.serve({ hostname: "127.0.0.1", port, fetch: createApp({ projects, secret }).fetch });
   console.log(`listening on 127.0.0.1:${server.port}`);
-  for (const p of projects) {
-    console.log(`project ${p.slug}: ${p.forms.size} forms`);
-    for (const e of p.loadErrors) console.log(`  ${e}`);
-  }
+  // Load errors were already logged by syncProjects.
+  for (const p of projects) console.log(`project ${p.slug}: ${p.forms.size} forms`);
 
   const stopOutbox = startOutboxLoop(projects);
   const timers = [setInterval(reload, RELOAD_MS), setInterval(purgeAll, PURGE_MS)];
@@ -169,8 +176,6 @@ function serve(args: string[]) {
     projects.forEach((p) => p.db.close());
     process.exit(0);
   };
-  process.on("SIGTERM", stop);
-  process.on("SIGINT", stop);
 }
 
 const commands: Record<string, (args: string[]) => void> = {

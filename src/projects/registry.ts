@@ -111,11 +111,9 @@ export function syncProjects(home: string, projects: Project[], seen: Map<string
     const i = projects.findIndex((p) => p.slug === slug);
     try {
       const p = loadProject(dir, projects[i]?.db);
-      if (i >= 0) {
-        projects[i] = p;
-        // serve prints the first load's errors; a reload's would otherwise go unseen.
-        for (const e of p.loadErrors) console.error(`quikform: project "${slug}": ${e}`);
-      } else projects.push(p);
+      if (i >= 0) projects[i] = p;
+      else projects.push(p);
+      for (const e of p.loadErrors) console.error(`quikform: project "${slug}": ${e}`);
     } catch (e) {
       console.error(`quikform: ${i >= 0 ? "keeping previous version of" : "skipping"} project "${slug}": ${reason(e)}`);
     }
