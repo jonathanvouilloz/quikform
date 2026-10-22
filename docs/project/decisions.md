@@ -33,3 +33,4 @@ Pris pendant l'exécution par sous-agents, sans Jon ; à relire.
 
 ## 2026-10-22 — Accords de Jon pour la tâche 10
 Jon autorise le rechargement de Caddy pour ajouter `formulaire.wildcatmuaythai.com` (`caddy validate` d'abord). Licence MIT, copyright « quikform contributors ».
+Logo : option A, le fichier du logo est copié dans le dossier du projet et servi par quikform (remplace `brand.logoUrl` externe), pour tenir « aucune ressource externe ». Polices système : proposées, en attente de confirmation.

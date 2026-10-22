@@ -21,7 +21,7 @@ Rien hors ce handoff et les cases du plan (commit `docs:` de fin de session). Br
 ## Bloquants et actions du propriétaire
 - Tâche 10 : jeton du bot et `chatId` Telegram ; DNS `formulaire.wildcatmuaythai.com` (A `187.77.71.11`, AAAA `2a02:4780:79:fe7e::1`)  ; Caddy : accord donné (voir decisions.md) ; envoi du lien à Meaw.
 - Licence : fichier `LICENSE` MIT ajouté.
-- Logo : le plan interdit toute ressource externe, mais `brand.logoUrl` peut pointer vers une URL https externe. Servir le logo depuis le dossier du projet, ou accepter l'exception ?
+- Logo : option A retenue (fichier dans le dossier du projet, servi par quikform) ; à coder avec la tâche 10.
 - Polices système consignées dans `DESIGN.md` (choix du plan validé) : à confirmer.
 - Fusion de `step-1` dans `master` : après la tâche 10.
 
