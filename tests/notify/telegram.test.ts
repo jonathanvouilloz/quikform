@@ -110,3 +110,17 @@ test("startOutboxLoop flushes, skips overlapping ticks, survives errors, and sto
   stop();
   expect(good.db.outbox.due(new Date(Date.now() + 1e9))).toHaveLength(0);
 });
+
+test("overlapping flushes of one db send each item once", async () => {
+  const p = project();
+  queueAlert(p, def, store(p));
+  let n = 0;
+  const send = async () => {
+    n++;
+    await Bun.sleep(30);
+  };
+  // A reload replaces the Project object but keeps the db: the guard must hold across both.
+  const results = await Promise.all([flushOutbox(p, T0, send), flushOutbox({ ...p }, T0, send)]);
+  expect(n).toBe(1);
+  expect(results).toContainEqual({ sent: 0, failed: 0 });
+});

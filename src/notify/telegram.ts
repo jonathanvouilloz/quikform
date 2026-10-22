@@ -2,11 +2,12 @@ import type { Field, FormDefinition } from "../definition/schema";
 import type { Values } from "../definition/response";
 import { t } from "../i18n/strings";
 import type { Project } from "../projects/registry";
+import type { ProjectDb } from "../store/db";
 
 export type SendFn = (token: string, chatId: string, text: string, threadId?: number) => Promise<void>;
 
-const MAX_TEXT = 3500;
 // Telegram's limit is 4096; the margin keeps the text safe whatever the encoding.
+const MAX_TEXT = 3500;
 const BACKOFF_MINUTES = [1, 5, 30, 60];
 
 /** Delay before the next try, given how many sends have failed so far (1-based). */
@@ -45,6 +46,9 @@ export const sendTelegram: SendFn = async (token, chatId, text, threadId) => {
   if (!res.ok) throw new Error(`telegram responded ${res.status}`);
 };
 
+// Keyed by db, not Project: a reload replaces the Project object but keeps its db.
+const flushing = new WeakSet<ProjectDb>();
+
 export async function flushOutbox(
   project: Project,
   now: Date,
@@ -52,40 +56,42 @@ export async function flushOutbox(
 ): Promise<{ sent: number; failed: number }> {
   const result = { sent: 0, failed: 0 };
   const tg = project.telegram;
-  if (!tg) return result;
-  for (const item of project.db.outbox.due(now)) {
-    const response = project.db.getResponse(item.responseId);
-    if (response) {
-      const def = project.forms.get(response.formId);
-      const text = def
-        ? formatAlert(def, response.values)
-        : join(response.formId, Object.entries(response.values).map(([k, v]) => `${k} : ${Array.isArray(v) ? v.join(", ") : v}`));
-      try {
-        await send(tg.botToken, tg.chatId, text, tg.threadId);
-      } catch (e) {
-        // Never log the text (personal data) or the token.
-        const status = /\d{3}/.exec(e instanceof Error ? e.message : "")?.[0] ?? "error";
-        console.error(`quikform: telegram alert failed (project ${project.slug}, item ${item.id}, ${status})`);
-        project.db.outbox.markFailed(item.id, new Date(now.getTime() + backoffMs(item.attempts + 1)));
-        result.failed++;
-        continue;
+  if (!tg || flushing.has(project.db)) return result;
+  flushing.add(project.db);
+  try {
+    for (const item of project.db.outbox.due(now)) {
+      const response = project.db.getResponse(item.responseId);
+      if (response) {
+        const def = project.forms.get(response.formId);
+        const text = def
+          ? formatAlert(def, response.values)
+          : join(response.formId, Object.entries(response.values).map(([k, v]) => `${k} : ${Array.isArray(v) ? v.join(", ") : v}`));
+        try {
+          await send(tg.botToken, tg.chatId, text, tg.threadId);
+        } catch (e) {
+          // Never log the text (personal data) or the token.
+          const status = /\d{3}/.exec(e instanceof Error ? e.message : "")?.[0] ?? "error";
+          console.error(`quikform: telegram alert failed (project ${project.slug}, item ${item.id}, ${status})`);
+          project.db.outbox.markFailed(item.id, new Date(now.getTime() + backoffMs(item.attempts + 1)));
+          result.failed++;
+          continue;
+        }
       }
+      project.db.outbox.markSent(item.id);
+      result.sent++;
     }
-    project.db.outbox.markSent(item.id);
-    result.sent++;
+  } finally {
+    flushing.delete(project.db);
   }
   return result;
 }
 
 export function startOutboxLoop(projects: Project[], intervalMs = 30_000, send: SendFn = sendTelegram): () => void {
-  const running = new Set<Project>();
   const timer = setInterval(() => {
     for (const p of projects) {
-      if (running.has(p)) continue;
-      running.add(p);
-      flushOutbox(p, new Date(), send)
-        .catch((e) => console.error(`quikform: outbox flush failed (project ${p.slug}): ${e instanceof Error ? e.name : "error"}`))
-        .finally(() => running.delete(p));
+      flushOutbox(p, new Date(), send).catch((e) =>
+        console.error(`quikform: outbox flush failed (project ${p.slug}): ${e instanceof Error ? e.name : "error"}`),
+      );
     }
   }, intervalMs);
   return () => clearInterval(timer);
