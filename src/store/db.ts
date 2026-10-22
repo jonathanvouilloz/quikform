@@ -48,10 +48,21 @@ const toResponse = (r: Row): StoredResponse => ({
   createdAt: new Date(r.created_at),
 });
 
+/** `months` before `now`, the day clamped to the target month's length (Mar 31 - 1 month = Feb 28 or 29). */
+export function cutoff(now: Date, months: number): Date {
+  const d = new Date(now);
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - months);
+  const days = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+  d.setUTCDate(Math.min(now.getUTCDate(), days));
+  return d;
+}
+
 // Timestamps are stored as integer milliseconds since the epoch (UTC).
 export function openProjectDb(path: string): ProjectDb {
   const db = new Database(path);
   db.run("PRAGMA journal_mode = WAL");
+  db.run("PRAGMA busy_timeout = 5000");
   db.run(`CREATE TABLE IF NOT EXISTS responses (
     id INTEGER PRIMARY KEY,
     submission_id TEXT NOT NULL UNIQUE,

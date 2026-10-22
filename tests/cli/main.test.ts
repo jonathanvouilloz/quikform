@@ -25,6 +25,18 @@ const write = (dir: string, name: string, v: unknown) => {
   fs.writeFileSync(f, JSON.stringify(v));
   return f;
 };
+// Reads stdout until the listening line, or to the end if the process exits first.
+async function untilListening(proc: { stdout: ReadableStream<Uint8Array> }) {
+  const reader = proc.stdout.getReader();
+  let out = "";
+  while (!/listening on/.test(out)) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    out += new TextDecoder().decode(value);
+  }
+  reader.releaseLock();
+  return out;
+}
 function setup() {
   const home = tmp();
   expect(qf(home, ["project", "init", "acme", "--domain", "forms.acme.test"]).code).toBe(0);
@@ -38,11 +50,15 @@ test("check: ok line, then one error per line and exit 1", () => {
   const bad = qf(d, ["check", write(d, "b.json", { id: "x" })]);
   expect(bad.code).toBe(1);
   expect(bad.err.trim().split("\n").length).toBeGreaterThan(1);
+  const typo = qf(d, ["check", write(d, "c.json", { ...minimal, colour: "red" })]);
+  expect([typo.code, typo.err.trim()]).toEqual([1, "(root): unrecognized keys colour"]);
 });
 
 test("usage errors exit 2, --help exits 0", () => {
   const d = tmp();
   expect(qf(d, ["nope"]).code).toBe(2);
+  const inherited = qf(d, ["constructor"]);
+  expect([inherited.code, inherited.err.includes("usage:")]).toEqual([2, true]);
   expect(qf(d, ["check", "--bogus"]).code).toBe(2);
   const h = qf(d, ["--help"]);
   expect([h.code, h.out.startsWith("usage:")]).toEqual([0, true]);
@@ -125,13 +141,31 @@ test("compiled binary serves /_qf/app.js with the bytes of dist/app.js and exits
   const proc = Bun.spawn([bin, "serve", "--port", "0"], {
     env: { QUIKFORM_HOME: home, QUIKFORM_SECRET: "s".repeat(40) }, stdout: "pipe", stderr: "pipe",
   });
-  const reader = proc.stdout.getReader();
-  let out = "";
-  while (!/listening on/.test(out)) out += new TextDecoder().decode((await reader.read()).value);
-  const port = /listening on 127\.0\.0\.1:(\d+)/.exec(out)?.[1];
-  expect(port).toBeDefined();
-  const res = await fetch(`http://127.0.0.1:${port}/_qf/app.js`);
-  expect(new Uint8Array(await res.arrayBuffer())).toEqual(new Uint8Array(fs.readFileSync(path.join(root, "dist/app.js"))));
-  proc.kill("SIGTERM");
-  expect(await proc.exited).toBe(0);
+  try {
+    const port = /listening on 127\.0\.0\.1:(\d+)/.exec(await untilListening(proc))?.[1];
+    expect(port).toBeDefined();
+    const res = await fetch(`http://127.0.0.1:${port}/_qf/app.js`);
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(new Uint8Array(fs.readFileSync(path.join(root, "dist/app.js"))));
+    proc.kill("SIGTERM");
+    expect(await proc.exited).toBe(0);
+  } finally {
+    proc.kill();
+  }
+});
+
+test("serve logs a failed reload and keeps running", async () => {
+  const home = tmp();
+  fs.writeFileSync(path.join(home, "projects"), "not a directory");
+  const proc = Bun.spawn(["bun", path.join(root, "src/cli/main.ts"), "serve", "--port", "0"], {
+    env: { PATH: process.env.PATH!, QUIKFORM_HOME: home, QUIKFORM_SECRET: "s".repeat(40) }, stdout: "pipe", stderr: "pipe",
+  });
+  try {
+    expect(await untilListening(proc)).toContain("listening on");
+    expect(proc.exitCode).toBeNull();
+    proc.kill();
+    await proc.exited;
+    expect(await new Response(proc.stderr).text()).toStartWith("quikform: reload failed: ");
+  } finally {
+    proc.kill();
+  }
 });

@@ -3,7 +3,7 @@ import { Database } from "bun:sqlite";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { openProjectDb } from "../../src/store/db";
+import { cutoff, openProjectDb } from "../../src/store/db";
 
 const dirs: string[] = [];
 function tmpDb() {
@@ -68,4 +68,12 @@ test("outbox: due, markFailed reschedules with attempts, markSent removes", () =
   expect(retry?.attempts).toBe(1);
   db.outbox.markSent(item!.id);
   expect(db.outbox.due(new Date("2030-01-01"))).toEqual([]);
+});
+
+test("cutoff goes back whole months and clamps the day at month end", () => {
+  const at = (s: string) => new Date(`${s}T10:00:00Z`);
+  expect(cutoff(at("2026-10-22"), 12)).toEqual(at("2025-10-22"));
+  expect(cutoff(at("2026-03-31"), 1)).toEqual(at("2026-02-28"));
+  expect(cutoff(at("2028-03-31"), 1)).toEqual(at("2028-02-29"));
+  expect(cutoff(at("2026-01-31"), 2)).toEqual(at("2025-11-30"));
 });

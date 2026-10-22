@@ -5,7 +5,7 @@ import { parseDefinition } from "../definition/schema";
 import { startOutboxLoop } from "../notify/telegram";
 import { HOSTNAME, syncProjects, type Project } from "../projects/registry";
 import { createApp } from "../server/app";
-import { openProjectDb } from "../store/db";
+import { cutoff, openProjectDb } from "../store/db";
 
 const USAGE = `usage:
   quikform serve [--port 8787]
@@ -126,11 +126,18 @@ function projectInit(args: string[]) {
 
 function purge(projects: Project[]) {
   for (const p of projects) {
-    const cutoff = new Date();
-    cutoff.setUTCMonth(cutoff.getUTCMonth() - p.retentionMonths);
-    console.log(`purged ${p.db.purgeOlderThan(cutoff)} responses older than ${p.retentionMonths} months (project ${p.slug})`);
+    console.log(`purged ${p.db.purgeOlderThan(cutoff(new Date(), p.retentionMonths))} responses older than ${p.retentionMonths} months (project ${p.slug})`);
   }
 }
+
+// Bun exits on a throwing timer callback: one failed run is logged and the next one tries again.
+const guarded = (name: string, fn: () => void) => () => {
+  try {
+    fn();
+  } catch (e) {
+    console.error(`quikform: ${name} failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
+};
 
 function serve(args: string[]) {
   const { values } = parseArgs({ args, options: { port: { type: "string", default: "8787" } } });
@@ -142,8 +149,10 @@ function serve(args: string[]) {
 
   const projects: Project[] = [];
   const seen = new Map<string, string>();
-  syncProjects(h, projects, seen);
-  purge(projects);
+  const reload = guarded("reload", () => syncProjects(h, projects, seen));
+  const purgeAll = guarded("purge", () => purge(projects));
+  reload();
+  purgeAll();
   const server = Bun.serve({ hostname: "127.0.0.1", port, fetch: createApp({ projects, secret }).fetch });
   console.log(`listening on 127.0.0.1:${server.port}`);
   for (const p of projects) {
@@ -152,7 +161,7 @@ function serve(args: string[]) {
   }
 
   const stopOutbox = startOutboxLoop(projects);
-  const timers = [setInterval(() => syncProjects(h, projects, seen), RELOAD_MS), setInterval(() => purge(projects), PURGE_MS)];
+  const timers = [setInterval(reload, RELOAD_MS), setInterval(purgeAll, PURGE_MS)];
   const stop = () => {
     timers.forEach(clearInterval);
     stopOutbox();
@@ -173,10 +182,9 @@ try {
   if (argv[0] === "--help" || argv[0] === "-h") console.log(USAGE);
   else {
     const two = `${argv[0]} ${argv[1]}`;
-    const key = two in commands ? two : argv[0] ?? "";
-    const run = commands[key];
-    if (!run) throw new Fail("unknown command", 2);
-    run(argv.slice(key.split(" ").length));
+    const key = Object.hasOwn(commands, two) ? two : argv[0] ?? "";
+    if (!Object.hasOwn(commands, key)) throw new Fail("unknown command", 2);
+    commands[key]!(argv.slice(key.split(" ").length));
   }
 } catch (e) {
   const code = e instanceof Fail ? e.code : (e as { code?: string }).code?.startsWith("ERR_PARSE_ARGS") ? 2 : 1;
