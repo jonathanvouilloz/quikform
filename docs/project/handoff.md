@@ -5,7 +5,7 @@ Mise à jour : 2026-10-22
 Cadrage terminé : `prd.md`, `architecture.md`, `decisions.md`, `PRODUCT.md`, brief visuel `design/references/refs.md` (Tally, Typeform) validé. Aucun code. `DESIGN.md` sera écrit à la fin du premier build (règle impeccable).
 
 ## Prochaine action
-Faire valider par Jon le périmètre de l'étape 1, puis écrire le plan dans `docs/plans/` (`superpowers:writing-plans`).
+Jon relit `docs/plans/2026-10-22-etape-1-questionnaire-meaw.md` et choisit le mode d'exécution ; puis Task 1.
 
 ## Vérifications
 Aucune : pas de code.
