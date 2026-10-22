@@ -1,0 +1,42 @@
+{
+  "id": "survey",
+  "version": 2,
+  "lang": "fr",
+  "address": "informal",
+  "title": "Questionnaire",
+  "description": "Quelques questions.",
+  "privacy": "Réponses conservées 12 mois.",
+  "submitLabel": "Envoyer",
+  "thankYou": { "title": "Merci", "body": "À bientôt." },
+  "access": "public",
+  "notify": { "telegram": true },
+  "steps": [
+    {
+      "title": "You",
+      "fields": [
+        { "id": "name", "type": "short_text", "label": "Nom", "required": true, "maxLength": 80 },
+        { "id": "email", "type": "email", "label": "E-mail", "placeholder": "a@b.c" },
+        { "id": "age", "type": "number", "label": "Âge", "min": 0, "max": 120 }
+      ]
+    },
+    {
+      "fields": [
+        { "id": "contacted", "type": "yes_no", "label": "Déjà contacté ?", "help": "Une seule réponse" },
+        {
+          "id": "color",
+          "type": "single_choice",
+          "label": "Couleur",
+          "options": [{ "value": "r", "label": "Rouge" }, { "value": "b", "label": "Bleu" }]
+        },
+        {
+          "id": "tags",
+          "type": "multiple_choice",
+          "label": "Tags",
+          "options": [{ "value": "a", "label": "A" }, { "value": "b", "label": "B" }],
+          "showIf": { "field": "contacted", "equals": true }
+        },
+        { "id": "note", "type": "long_text", "label": "Note", "showIf": { "field": "color", "in": ["r"] } }
+      ]
+    }
+  ]
+}

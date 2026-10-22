@@ -2,3 +2,4 @@ design/shots/
 node_modules/
 *.sqlite
 .env*
+dist/
