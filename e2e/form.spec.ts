@@ -104,7 +104,7 @@ test("keyboard only on a phone: steps, showIf, draft after reload, submit", asyn
     has_deadline: false,
     budget: 5000,
     channels: ["social"],
-    details: "Ligne 1\r\nLigne 2", // form submission sends textarea newlines as CRLF
+    details: "Ligne 1\nLigne 2", // sent as CRLF, stored as LF
   });
 
   await page.goto("/demo");
