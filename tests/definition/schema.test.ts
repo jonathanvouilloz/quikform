@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import minimal from "../fixtures/minimal.json";
 import steps from "../fixtures/steps.json";
-import { parseDefinition } from "../../src/definition/schema";
+import { HONEYPOT, parseDefinition } from "../../src/definition/schema";
 
 const clone = () => structuredClone(minimal) as any;
 const errorsOf = (input: unknown) => {
@@ -30,6 +30,12 @@ test("rejects duplicate field ids across steps", () => {
   const d = clone();
   d.steps.push({ fields: [{ id: "name", type: "email", label: "E" }] });
   expect(errorsOf(d).join("\n")).toContain("name");
+});
+
+test("rejects the honeypot name as a field id", () => {
+  const d = clone();
+  d.steps[0].fields[0].id = HONEYPOT;
+  expect(errorsOf(d)).toEqual([`steps.0.fields.0.id: "${HONEYPOT}" is reserved`]);
 });
 
 test("rejects choice fields without at least 2 options", () => {

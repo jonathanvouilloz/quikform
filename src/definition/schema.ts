@@ -1,6 +1,9 @@
 import * as z from "zod/mini";
 
 const ID = /^[a-z][a-z0-9_-]{0,47}$/;
+// Name of the anti-spam input on the form page; a field with this id would look like a filled honeypot.
+export const HONEYPOT = "website";
+
 const CHOICE_TYPES = ["single_choice", "multiple_choice"];
 
 const FIELD_TYPES = [
@@ -23,7 +26,7 @@ const ShowIf = z.strictObject({
 
 const Field = z
   .strictObject({
-    id: z.string().check(z.regex(ID)),
+    id: z.string().check(z.regex(ID), z.refine((id) => id !== HONEYPOT, { error: `"${HONEYPOT}" is reserved` })),
     type: z.enum(FIELD_TYPES),
     label: z.string().check(z.minLength(1)),
     help: z.optional(z.string()),

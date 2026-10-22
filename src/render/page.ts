@@ -1,4 +1,4 @@
-import type { FormDefinition } from "../definition/schema";
+import { HONEYPOT, type FormDefinition } from "../definition/schema";
 import { t } from "../i18n/strings";
 import { escapeHtml as e } from "./escape";
 import { optionId, renderField } from "./fields";
@@ -105,7 +105,7 @@ export function renderFormPage(input: {
     `<input type="hidden" name="_sid" value="${e(input.submissionId)}">` +
     `<input type="hidden" name="_t" value="${e(input.timestamp)}">` +
     // Honeypot: off-screen, out of the tab order and hidden from assistive tech; only bots fill it.
-    `<div class="qf-hp" aria-hidden="true"><input type="text" name="website" id="qf:website" tabindex="-1" autocomplete="off"></div>` +
+    `<div class="qf-hp" aria-hidden="true"><input type="text" name="${HONEYPOT}" id="qf:${HONEYPOT}" tabindex="-1" autocomplete="off"></div>` +
     steps +
     `<div class="qf-actions" data-actions><button type="submit" class="qf-submit">${e(def.submitLabel ?? say("submit"))}${ARROW}</button></div>` +
     `<p class="qf-privacy">${e(def.privacy)}</p></form>` +
