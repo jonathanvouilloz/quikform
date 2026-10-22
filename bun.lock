@@ -10,8 +10,8 @@
       },
       "devDependencies": {
         "@playwright/test": "1.55.0",
-        "@types/bun": "latest",
-        "typescript": "latest",
+        "@types/bun": "1.4.3",
+        "typescript": "7.0.2",
       },
     },
   },
