@@ -107,8 +107,9 @@ export function renderFormPage(input: {
     // Honeypot: off-screen, out of the tab order and hidden from assistive tech; only bots fill it.
     `<div class="qf-hp" aria-hidden="true"><input type="text" name="${HONEYPOT}" id="qf:${HONEYPOT}" tabindex="-1" autocomplete="off"></div>` +
     steps +
-    `<div class="qf-actions" data-actions><button type="submit" class="qf-submit">${e(def.submitLabel ?? say("submit"))}${ARROW}</button></div>` +
-    `<p class="qf-privacy">${e(def.privacy)}</p></form>` +
+    // Privacy note before the button: read before sending, and the phone's sticky bar stays last.
+    `<p class="qf-privacy">${e(def.privacy)}</p>` +
+    `<div class="qf-actions" data-actions><button type="submit" class="qf-submit">${e(def.submitLabel ?? say("submit"))}${ARROW}</button></div></form>` +
     `<script type="application/json" id="qf-def">${embedJson(def)}</script>`;
   return page(def.lang, def.title, body, `<script src="/_qf/app.js" defer></script>`);
 }

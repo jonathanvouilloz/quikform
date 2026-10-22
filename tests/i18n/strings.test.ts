@@ -13,7 +13,7 @@ test("fr formal vs informal and variables", () => {
   expect(t("fr", "formal", "invalidEmail")).toBe("Vérifiez votre adresse email.");
   expect(t("fr", "informal", "invalidEmail")).toBe("Vérifie ton adresse email.");
   expect(t("fr", "formal", "stepOf", { current: 2, total: 5 })).toBe("Étape 2 sur 5");
-  expect(t("fr", "formal", "errorSummary")).toContain(" :");
+  expect(t("fr", "formal", "errorSummary")).toContain("\u202f:");
 });
 
 test("no exclamation marks anywhere", () => {

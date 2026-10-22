@@ -13,7 +13,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--qf-line) transparent; }
 
 body {
   margin: 0;
@@ -43,7 +43,7 @@ body {
   letter-spacing: -0.015em;
   text-wrap: balance;
 }
-.qf-description { margin: 0; color: var(--qf-muted); max-width: 65ch; }
+.qf-description { margin: 0; color: var(--qf-muted); max-width: 65ch; text-wrap: pretty; }
 
 /* Progress: hidden until the script switches to step mode. */
 .qf-progress {
@@ -82,7 +82,7 @@ body {
 .qf [hidden] { display: none !important; }
 .qf-step + .qf-step { margin-top: 3rem; }
 .qf-step[hidden] + .qf-step { margin-top: 0; }
-.qf-stepof { margin: 0 0 1.25rem; color: var(--qf-muted); font-size: 0.9375rem; font-weight: 600; }
+.qf-stepof { margin: 0 0 0 auto; color: var(--qf-muted); font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
 .qf-draft { margin: 0 0 1.25rem; color: var(--qf-muted); font-size: 0.875rem; }
 @keyframes qf-in { from { opacity: 0; transform: translateY(4px); } }
 .qf-in { animation: qf-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -94,13 +94,13 @@ body {
   display: block;
   padding: 0;
   margin: 0 0 0.5rem;
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   line-height: 1.35;
   font-weight: 700;
 }
 .qf-optional { font-weight: 400; color: var(--qf-muted); }
 
-.qf-help { margin: -0.25rem 0 0.625rem; color: var(--qf-muted); font-size: 0.9375rem; max-width: 65ch; }
+.qf-help { margin: -0.25rem 0 0.625rem; color: var(--qf-muted); font-size: 0.9375rem; max-width: 65ch; text-wrap: pretty; }
 .qf-error { margin: 0 0 0.5rem; color: var(--qf-error); font-size: 0.9375rem; font-weight: 600; }
 
 .qf-field input[type="text"],
@@ -176,7 +176,7 @@ body {
 /* Honeypot: off-screen rather than display:none, which some bots skip. */
 .qf-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
-.qf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1rem; }
+.qf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 .qf-submit {
   display: inline-flex;
   align-items: center;
@@ -210,20 +210,25 @@ body {
 .qf-arrow { flex: none; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .qf-submit:hover .qf-arrow { transform: translateX(2px); }
 
-.qf-privacy { margin: 1rem 0 0; color: var(--qf-muted); font-size: 0.875rem; max-width: 65ch; }
+.qf-privacy { margin: 0 0 1.25rem; color: var(--qf-muted); font-size: 0.875rem; max-width: 65ch; text-wrap: pretty; }
 
 @media (max-width: 639.98px) {
-  .qf { padding: 2.5rem 1.25rem 2rem; }
+  /* Keyboard focus never lands under the sticky bar (WCAG 2.4.11). */
+  html { scroll-padding-bottom: 7.5rem; }
+  /* Full-height column: on a short step the bar still rests on the bottom edge, within thumb reach. */
+  .qf { display: flex; flex-direction: column; min-height: 100svh; padding: 2.5rem 1.25rem 0; }
+  .qf-form { flex: 1; display: flex; flex-direction: column; }
   .qf-options { align-items: stretch; }
   .qf-actions {
     position: sticky;
     bottom: 0;
-    margin: 1rem -1.25rem 0;
+    margin: auto -1.25rem 0;
     padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom));
     background: #fff;
     box-shadow: 0 -6px 16px -8px rgb(0 0 0 / 0.18);
   }
   .qf-submit { flex: 1; }
+  .qf-actions .qf-stepof { flex-basis: 100%; margin: 0; text-align: center; font-size: 0.875rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

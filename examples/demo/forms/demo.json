@@ -30,11 +30,11 @@
             { "value": "app", "label": "Application" }
           ]
         },
-        { "id": "has_deadline", "type": "yes_no", "label": "Avez-vous une date limite ?", "required": true },
+        { "id": "has_deadline", "type": "yes_no", "label": "Avez-vous une date limite ?", "required": true },
         {
           "id": "deadline",
           "type": "short_text",
-          "label": "Pour quand ?",
+          "label": "Pour quand ?",
           "required": true,
           "showIf": { "field": "has_deadline", "equals": true }
         },
@@ -47,14 +47,14 @@
         {
           "id": "channels",
           "type": "multiple_choice",
-          "label": "Comment nous avez-vous connus ?",
+          "label": "Comment nous avez-vous connus ?",
           "options": [
             { "value": "search", "label": "Recherche en ligne" },
             { "value": "friend", "label": "Bouche-à-oreille" },
             { "value": "social", "label": "Réseaux sociaux" }
           ]
         },
-        { "id": "details", "type": "long_text", "label": "Autre chose à ajouter ?", "maxLength": 2000 }
+        { "id": "details", "type": "long_text", "label": "Autre chose à ajouter ?", "maxLength": 2000 }
       ]
     }
   ]

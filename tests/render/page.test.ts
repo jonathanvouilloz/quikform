@@ -32,6 +32,11 @@ test("page includes honeypot input name=website (hidden from users and AT), hidd
   expect(html).toContain(`<input type="hidden" name="_t" value="1&quot;&gt;&lt;b&gt;">`);
 });
 
+test("privacy note comes before the submit button and the actions close the form", () => {
+  const html = renderFormPage({ ...base, def: def(minimal) });
+  expect(html).toMatch(/<p class="qf-privacy">[^<]*<\/p><div class="qf-actions" data-actions>.*?<\/div><\/form>/);
+});
+
 test("page has no external URL in src/href except brand.logoUrl", () => {
   const logoUrl = "https://cdn.example.com/logo.png";
   const pages = [

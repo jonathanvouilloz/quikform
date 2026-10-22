@@ -147,7 +147,7 @@ function init(form: HTMLFormElement, def: FormDefinition) {
   const status = document.createElement("p");
   status.className = "qf-stepof";
   status.setAttribute("aria-live", "polite");
-  // Next is a copy of the submit button (same look and arrow); Back comes last in the tab order.
+  // Next is a copy of the submit button (same look and arrow); Back comes after it in the tab order.
   const next = submit.cloneNode(true) as HTMLButtonElement;
   next.type = "button";
   next.firstChild!.textContent = say("next");
@@ -199,9 +199,9 @@ function init(form: HTMLFormElement, def: FormDefinition) {
   sync();
 
   if (stepMode) {
-    sections[0]!.before(status);
     actions.prepend(next);
-    actions.append(back);
+    // The counter sits with the buttons: above the step title it would read as an eyebrow.
+    actions.append(back, status);
     progress?.removeAttribute("hidden");
     const start = serverErrors ? Number(serverErrors.closest<HTMLElement>("[data-step]")!.dataset.step) : (draft?.step ?? 0);
     go(start, false);

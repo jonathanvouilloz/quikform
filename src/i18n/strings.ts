@@ -11,7 +11,7 @@ export type StringKey =
 // A tuple is [formal, informal]; a plain string serves both.
 type Entry = string | readonly [string, string];
 
-const N = " "; // non-breaking space
+const N = "\u202f"; // narrow non-breaking space, French rule before : ; ! ?
 
 const strings: Record<Lang, Record<StringKey, Entry>> = {
   fr: {
