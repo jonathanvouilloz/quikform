@@ -21,3 +21,12 @@ Choix de Jon : des étapes thématiques (« Vos coordonnées », « Votre séjou
 ## 2026-10-22 — Exécution du plan par sous-agents, relecture à chaque tâche
 Choix de Jon : `superpowers:subagent-driven-development`, une tâche par sous-agent, relue par un autre sous-agent avant la suivante, code propre de bout en bout. Écarté : exécution directe dans une seule session (moins chère, mais sans relecture indépendante avant la fin).
 À rouvrir si : le coût par tâche devient disproportionné pour des tâches triviales.
+
+## 2026-10-22 — Arbitrages pendant l'exécution de l'étape 1
+Pris pendant l'exécution par sous-agents, sans Jon ; à relire.
+- Couleur de marque servie par `/_qf/brand.css`, pas en style en ligne : la politique de sécurité du contenu (CSP) reste `default-src 'self'` sans exception. Écarté : nonce ou `unsafe-inline`.
+- Durée de conservation par projet (`retentionMonths` dans `project.json`), alors que l'architecture la dit « par formulaire ». À rouvrir si un projet a besoin de deux durées.
+- `serve` recharge un projet quand `forms/`, `project.json` ou `.env` changent (contrôle toutes les 10 s) : un agent publie sans redémarrer le serveur.
+- Mention de confidentialité placée avant le bouton d'envoi (le plan disait « sous ») : lue avant d'envoyer et visible au-dessus de la barre collée en bas sur téléphone.
+- Le navigateur retient un envoi fait moins de 3 s après le chargement, et le brouillon ne s'efface que sur la page de remerciement : aucune réponse perdue en silence. La limite de 3 s du serveur reste inchangée.
+- Alertes Telegram : une seule vidange de la file à la fois par base, pour ne jamais envoyer une alerte en double. Une alerte peut attendre jusqu'à 30 s.
