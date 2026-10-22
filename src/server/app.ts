@@ -92,8 +92,9 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
       const strings = [v].flat().filter((x): x is string => typeof x === "string"); // drops File values
       if (strings.length) raw[k] = Array.isArray(v) ? strings : strings[0]!;
     }
-    const thanks = c.redirect(`/${r.def.id}/thanks`, 303);
-    if (raw[HONEYPOT] || !stampOk(raw._t)) return thanks;
+    // Built on return only: c.redirect sets Location on the shared context.
+    const thanks = () => c.redirect(`/${r.def.id}/thanks`, 303);
+    if (raw[HONEYPOT] || !stampOk(raw._t)) return thanks();
 
     const v = validateResponse(r.def, raw);
     const sid = typeof raw._sid === "string" && UUID.test(raw._sid) ? raw._sid : crypto.randomUUID();
@@ -104,7 +105,7 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     if (inserted && queueAlert(r.project, r.def, id)) {
       flushOutbox(r.project, now()).catch(() => console.error(`quikform: outbox flush failed (project ${r.project.slug})`));
     }
-    return thanks;
+    return thanks();
   });
 
   return app;

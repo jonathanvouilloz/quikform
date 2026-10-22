@@ -64,11 +64,15 @@ test("same _sid twice -> 303 both times, one row, one alert", async () => {
 test("invalid POST -> 422 page re-rendered with values, summary, aria-invalid, kept _sid, fresh _t", async () => {
   const { app, project } = setup();
   const sid = crypto.randomUUID();
-  const res = await post(app, good({ _sid: sid, name: "", color: "bad", tags: "a" }));
+  const res = await post(app, good({ _sid: sid, name: "", email: "ana@x.test", contacted: "yes", color: "bad", tags: "a" }));
   expect(res.status).toBe(422);
   const html = await res.text();
   expect(html).toContain("qf-summary");
   expect(html).toContain("aria-invalid");
+  expect(res.headers.get("location")).toBeNull();
+  expect(html).toContain('href="#name"');
+  expect(html).toContain('name="email" placeholder="a@b.c" value="ana@x.test"');
+  expect(html).toMatch(/<input type="checkbox" id="tags:0" name="tags" value="a" checked/);
   expect(html).toContain(`name="_sid" value="${sid}"`);
   expect(html).toContain(`value="${T0 + 60_000}.`);
   expect(res.headers.get("cache-control")).toBe("no-store");
