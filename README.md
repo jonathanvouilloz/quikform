@@ -55,7 +55,7 @@ Fields have an `id`, a `type`, an always-visible `label`, and optional `required
     quikform serve [--port 8787]
 
 - `form put` validates, then writes `forms/<id>.json` atomically. The version goes up by one when the content changed, and nothing is written when it did not.
-- `serve` needs `QUIKFORM_HOME` and `QUIKFORM_SECRET` (32 characters or more). It listens on 127.0.0.1 only, so put a reverse proxy such as Caddy in front. It reloads projects when `project.json` or `forms/` changes (checked every 10 seconds) and deletes responses older than `retentionMonths` once a day.
+- `serve` needs `QUIKFORM_HOME` and `QUIKFORM_SECRET` (32 characters or more). It listens on 127.0.0.1 only, so put a reverse proxy such as Caddy in front. It reloads a project when `project.json` or `.env` changes, or when the `forms/` listing changes, as `form put` does (checked every 10 seconds); a form file edited in place is not detected, so use `form put`. It deletes responses older than `retentionMonths` once a day.
 - Exit codes: 0 success, 1 failure, 2 usage error.
 
 ## License

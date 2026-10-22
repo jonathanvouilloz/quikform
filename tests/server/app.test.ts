@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterAll, afterEach, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -13,7 +13,11 @@ const parsed = parseDefinition({ ...steps, notify: { telegram: true } });
 if (!parsed.ok) throw new Error(parsed.errors.join());
 const def = parsed.value;
 // Telegram never answers: the alert stays in the outbox and no real request leaves the machine.
+const realFetch = globalThis.fetch;
 globalThis.fetch = (() => new Promise(() => {})) as unknown as typeof fetch;
+afterAll(() => {
+  globalThis.fetch = realFetch; // bun shares globals across test files
+});
 const SECRET = "s3cret";
 const T0 = 1_800_000_000_000;
 
@@ -148,7 +152,7 @@ test("every response carries the security headers", async () => {
   const { app } = setup();
   for (const [p, host] of [[`/${def.id}`, "forms.acme.test"], ["/nope", "evil.test"], ["/_qf/app.css", "evil.test"]] as const) {
     const res = await app.request(p, { headers: { host } });
-    expect(res.headers.get("content-security-policy")).toBe("default-src 'self'; img-src 'self' https: data:");
+    expect(res.headers.get("content-security-policy")).toBe("default-src 'self'; img-src 'self' https: data:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
     expect(res.headers.get("referrer-policy")).toBe("same-origin");
   }

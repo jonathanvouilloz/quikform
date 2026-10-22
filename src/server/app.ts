@@ -9,7 +9,7 @@ import { flushOutbox, queueAlert } from "../notify/telegram";
 // Built by scripts/build-client.ts (the test preload runs it); the text import embeds it in the compiled binary.
 import clientJs from "../../dist/app.js" with { type: "text" };
 
-const CSP = "default-src 'self'; img-src 'self' https: data:";
+const CSP = "default-src 'self'; img-src 'self' https: data:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 const RATE_MAX = 10;
 const RATE_WINDOW_MS = 10 * 60_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
