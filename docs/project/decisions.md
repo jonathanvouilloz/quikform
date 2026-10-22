@@ -17,3 +17,7 @@ Pourquoi : le même confort et la même validation sur tous les formulaires, et 
 
 ## 2026-10-22 — Formulaires longs : une étape = un groupe de questions liées
 Choix de Jon : des étapes thématiques (« Vos coordonnées », « Votre séjour ») avec une barre de progression, plutôt qu'une question par écran façon Typeform, trop lente pour un formulaire de 15 questions ou plus. Brief visuel validé : `design/references/refs.md`.
+
+## 2026-10-22 — Exécution du plan par sous-agents, relecture à chaque tâche
+Choix de Jon : `superpowers:subagent-driven-development`, une tâche par sous-agent, relue par un autre sous-agent avant la suivante, code propre de bout en bout. Écarté : exécution directe dans une seule session (moins chère, mais sans relecture indépendante avant la fin).
+À rouvrir si : le coût par tâche devient disproportionné pour des tâches triviales.
