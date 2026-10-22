@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { t, type StringKey } from "../../src/i18n/strings";
 
-const KEYS: StringKey[] = ["required", "invalidEmail", "number", "min", "max", "maxLength", "chooseOne", "next", "back", "submit", "stepOf", "errorSummary", "draftRestored", "yes", "no", "optional", "sending", "networkError"];
+const KEYS: StringKey[] = ["required", "invalidEmail", "number", "min", "max", "maxLength", "chooseOne", "next", "back", "submit", "stepOf", "errorSummary", "draftRestored", "yes", "no", "optional", "sending", "networkError", "notFound"];
 
 test("every StringKey exists in fr, en, de, th, formal and informal", () => {
   for (const lang of ["fr", "en", "de", "th"] as const)

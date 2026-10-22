@@ -6,7 +6,7 @@ export type Address = FormDefinition["address"];
 export type StringKey =
   | "required" | "invalidEmail" | "number" | "min" | "max" | "maxLength" | "chooseOne"
   | "next" | "back" | "submit" | "stepOf" | "errorSummary" | "draftRestored"
-  | "yes" | "no" | "optional" | "sending" | "networkError";
+  | "yes" | "no" | "optional" | "sending" | "networkError" | "notFound";
 
 // A tuple is [formal, informal]; a plain string serves both.
 type Entry = string | readonly [string, string];
@@ -33,6 +33,7 @@ const strings: Record<Lang, Record<StringKey, Entry>> = {
     optional: "facultatif",
     sending: "Envoi en cours…",
     networkError: ["Le réseau ne répond pas. Réessayez.", "Le réseau ne répond pas. Réessaie."],
+    notFound: "Ce formulaire n’existe pas.",
   },
   en: {
     required: "This field is required.",
@@ -53,6 +54,7 @@ const strings: Record<Lang, Record<StringKey, Entry>> = {
     optional: "optional",
     sending: "Sending…",
     networkError: "The network is not responding. Try again.",
+    notFound: "This form does not exist.",
   },
   de: {
     required: "Dieses Feld ist erforderlich.",
@@ -73,6 +75,7 @@ const strings: Record<Lang, Record<StringKey, Entry>> = {
     optional: "optional",
     sending: "Wird gesendet…",
     networkError: ["Keine Verbindung zum Netzwerk. Versuchen Sie es erneut.", "Keine Verbindung zum Netzwerk. Versuche es erneut."],
+    notFound: "Dieses Formular existiert nicht.",
   },
   th: {
     required: "กรุณากรอกข้อมูลในช่องนี้",
@@ -93,6 +96,7 @@ const strings: Record<Lang, Record<StringKey, Entry>> = {
     optional: "ไม่บังคับ",
     sending: "กำลังส่ง…",
     networkError: "เชื่อมต่อเครือข่ายไม่ได้ กรุณาลองอีกครั้ง",
+    notFound: "ไม่พบแบบฟอร์มนี้",
   },
 };
 
