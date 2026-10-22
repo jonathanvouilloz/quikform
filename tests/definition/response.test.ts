@@ -114,3 +114,16 @@ test("fr formal: required and invalidEmail messages; lang override and fallback"
   const inf = make([{ id: "e", type: "email", label: "E" }], "fr", "informal");
   expect(validateResponse(inf, { e: "x" })).toEqual({ ok: false, errors: { e: "Vérifie ton adresse email." } });
 });
+
+test("number accepts a decimal comma, rejects hex and exponents", () => {
+  const d = make([{ id: "n", type: "number", label: "N" }]);
+  expect(validateResponse(d, { n: " 12,5 " })).toEqual({ ok: true, values: { n: 12.5 } });
+  expect(validateResponse(d, { n: "-3.25" })).toEqual({ ok: true, values: { n: -3.25 } });
+  for (const n of ["0x10", "1e3", "12,", "1.2.3"]) expect(validateResponse(d, { n })).toEqual({ ok: false, errors: { n: t("en", "formal", "number") } });
+});
+
+test("CRLF line breaks count as one character and are stored as \\n", () => {
+  const d = make([{ id: "m", type: "long_text", label: "M", maxLength: 3 }]);
+  expect(validateResponse(d, { m: "a\r\nb" })).toEqual({ ok: true, values: { m: "a\nb" } });
+  expect(validateResponse(d, { m: "a\rb" })).toEqual({ ok: true, values: { m: "a\nb" } });
+});

@@ -17,11 +17,12 @@ function coerce(f: Field, raw: unknown): unknown {
   }
   if (typeof raw === "boolean") return f.type === "yes_no" ? raw : undefined;
   if (typeof raw !== "string") return raw ?? undefined;
-  const s = f.type === "yes_no" ? raw : raw.trim();
+  // Browsers send CRLF for textarea line breaks; maxLength counts one character per break.
+  const s = f.type === "yes_no" ? raw : raw.replace(/\r\n?/g, "\n").trim();
   if (s === "") return undefined;
   if (f.type === "yes_no") return s === "yes" ? true : s === "no" ? false : s;
-  const n = Number(s);
-  return f.type === "number" && Number.isFinite(n) ? n : s;
+  // Plain decimals only, with a point or the comma fr/de keyboards show; Number() would also take "0x10" or "1e3".
+  return f.type === "number" && /^-?\d+([.,]\d+)?$/.test(s) ? Number(s.replace(",", ".")) : s;
 }
 
 function matches(f: Field, v: Value | undefined): boolean {
