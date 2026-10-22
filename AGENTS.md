@@ -11,7 +11,8 @@ Des formulaires sans friction, écrits par des agents IA à partir d'une phrase,
 
 ## Stack et commandes
 Bun + Hono, HTML rendu serveur, script client écrit à la main, Zod 4, `bun:sqlite`, `bun build --compile` (voir `docs/project/decisions.md`).
-Commandes : `bun test` (construit d'abord `dist/app.js`), `bunx tsc --noEmit` (après un premier build), `bun run build:client`, `bun run e2e` (Playwright, téléphone 390×844).
+Commandes : `bun test` (construit d'abord `dist/app.js`, compile aussi le binaire une fois), `bunx tsc --noEmit` (après un premier build), `bun run build` (client puis exécutable `dist/quikform`), `bun run build:client`, `bun run e2e` (Playwright, téléphone 390×844).
+CLI (`QUIKFORM_HOME` requis, `QUIKFORM_SECRET` de 32 caractères au moins pour `serve`) : `quikform serve [--port 8787]`, `check <fichier>`, `form put --project <slug> <fichier>`, `responses --project <slug> [--form <id>] [--limit 50] [--json]`, `project init <slug> --domain <hôte>`. `serve` écoute sur 127.0.0.1 seulement, recharge les projets toutes les 10 s et purge selon `retentionMonths` toutes les 24 h.
 
 ## Conventions
 - Code, noms, messages de commit et README en anglais (projet open source). Documents de cadrage en français.

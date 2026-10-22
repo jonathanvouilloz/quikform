@@ -17,7 +17,8 @@ export type Project = {
   loadErrors: string[];
 };
 
-const Hostname = z.string().check(z.regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i));
+export const HOSTNAME = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i;
+const Hostname = z.string().check(z.regex(HOSTNAME));
 // Strict objects: a stray key (a botToken in particular) rejects the whole file.
 const ProjectConfig = z.strictObject({
   domains: z.array(Hostname).check(z.minLength(1)),
@@ -59,42 +60,61 @@ function loadForms(dir: string, loadErrors: string[]): Map<string, FormDefinitio
   return forms;
 }
 
-export function loadProjects(home: string): Project[] {
-  const root = path.join(home, "projects");
-  if (!fs.existsSync(root)) return [];
-  const projects: Project[] = [];
-  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const slug = entry.name;
-    const dir = path.join(root, slug);
-    let config: z.output<typeof ProjectConfig>;
-    try {
-      const parsed = z.safeParse(ProjectConfig, JSON.parse(fs.readFileSync(path.join(dir, "project.json"), "utf8")));
-      if (!parsed.success) throw new Error(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.code === "unrecognized_keys" ? `unrecognized keys ${i.keys.join(", ")}` : i.message}`).join("; "));
-      config = parsed.data;
-    } catch (e) {
-      console.error(`quikform: skipping project "${slug}": ${reason(e)}`);
-      continue;
-    }
-    const loadErrors: string[] = [];
-    let telegram: Project["telegram"];
-    if (config.telegram) {
-      const botToken = readToken(path.join(dir, ".env"));
-      if (botToken) telegram = { ...config.telegram, botToken };
-      else loadErrors.push("telegram is configured but TELEGRAM_BOT_TOKEN is missing from .env");
-    }
-    projects.push({
-      slug,
-      dir,
-      domains: config.domains.map((d) => d.toLowerCase()),
-      brand: config.brand,
-      retentionMonths: config.retentionMonths,
-      telegram,
-      forms: loadForms(dir, loadErrors),
-      db: openProjectDb(path.join(dir, "data.sqlite")),
-      loadErrors,
-    });
+// Throws when project.json is missing or invalid. An already-open db can be passed in (reload keeps its handle).
+export function loadProject(dir: string, db?: ProjectDb): Project {
+  const parsed = z.safeParse(ProjectConfig, JSON.parse(fs.readFileSync(path.join(dir, "project.json"), "utf8")));
+  if (!parsed.success) throw new Error(parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.code === "unrecognized_keys" ? `unrecognized keys ${i.keys.join(", ")}` : i.message}`).join("; "));
+  const config = parsed.data;
+  const loadErrors: string[] = [];
+  let telegram: Project["telegram"];
+  if (config.telegram) {
+    const botToken = readToken(path.join(dir, ".env"));
+    if (botToken) telegram = { ...config.telegram, botToken };
+    else loadErrors.push("telegram is configured but TELEGRAM_BOT_TOKEN is missing from .env");
   }
+  return {
+    slug: path.basename(dir),
+    dir,
+    domains: config.domains.map((d) => d.toLowerCase()),
+    brand: config.brand,
+    retentionMonths: config.retentionMonths,
+    telegram,
+    forms: loadForms(dir, loadErrors),
+    db: db ?? openProjectDb(path.join(dir, "data.sqlite")),
+    loadErrors,
+  };
+}
+
+// Brings `projects` (mutated in place, as createApp and the outbox loop hold it) in line with the disk.
+// `seen` remembers each folder's signature; a changed one is reloaded, a failed reload keeps the previous version.
+export function syncProjects(home: string, projects: Project[], seen: Map<string, string>): void {
+  const root = path.join(home, "projects");
+  const slugs = fs.existsSync(root) ? fs.readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
+  const mtime = (f: string) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } };
+  for (const slug of slugs) {
+    const dir = path.join(root, slug);
+    const sig = ["project.json", ".env", "forms"].map((f) => mtime(path.join(dir, f))).join(":");
+    if (seen.get(slug) === sig) continue;
+    seen.set(slug, sig);
+    const i = projects.findIndex((p) => p.slug === slug);
+    try {
+      const p = loadProject(dir, projects[i]?.db);
+      if (i >= 0) projects[i] = p;
+      else projects.push(p);
+    } catch (e) {
+      console.error(`quikform: ${i >= 0 ? "keeping previous version of" : "skipping"} project "${slug}": ${reason(e)}`);
+    }
+  }
+  for (const slug of [...seen.keys()].filter((s) => !slugs.includes(s))) {
+    seen.delete(slug);
+    const i = projects.findIndex((p) => p.slug === slug);
+    if (i >= 0) projects.splice(i, 1)[0]!.db.close();
+  }
+}
+
+export function loadProjects(home: string): Project[] {
+  const projects: Project[] = [];
+  syncProjects(home, projects, new Map());
   return projects;
 }
 

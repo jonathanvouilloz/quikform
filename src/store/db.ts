@@ -22,6 +22,7 @@ export type ProjectDb = {
   getResponse(id: number): StoredResponse | undefined;
   listResponses(q: { formId?: string; limit?: number }): StoredResponse[];
   purgeOlderThan(date: Date): number;
+  close(): void;
   outbox: {
     enqueue(responseId: number): void;
     due(now: Date): OutboxItem[];
@@ -112,6 +113,7 @@ export function openProjectDb(path: string): ProjectDb {
       return (list.all(formId ?? null, limit ?? -1) as Row[]).map(toResponse);
     },
     purgeOlderThan: (date) => purgeAll(date.getTime()),
+    close: () => db.close(),
     outbox: {
       enqueue: (responseId) => void enqueue.run(responseId, Date.now()),
       due: (now) => due.all(now.getTime()) as OutboxItem[],

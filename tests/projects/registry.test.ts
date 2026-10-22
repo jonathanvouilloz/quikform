@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import minimal from "../fixtures/minimal.json";
-import { loadProjects, resolveProject } from "../../src/projects/registry";
+import { loadProjects, resolveProject, syncProjects, type Project } from "../../src/projects/registry";
 
 const dirs: string[] = [];
 function home(files: Record<string, unknown>): string {
@@ -83,4 +83,38 @@ test("the demo project in examples/ loads without errors", () => {
   const demo = p!.forms.get("demo")!;
   expect(demo.steps).toHaveLength(3);
   expect(new Set(demo.steps.flatMap((s) => s.fields.map((f) => f.type))).size).toBe(7);
+});
+
+test("syncProjects loads, reloads in place keeping the db handle, drops removed projects", () => {
+  const h = home({ "a/project.json": pj, "a/forms/contact.json": minimal });
+  const projects: Project[] = [];
+  const seen = new Map<string, string>();
+  syncProjects(h, projects, seen);
+  const db = projects[0]!.db;
+  expect(projects[0]!.forms.size).toBe(1);
+
+  fs.writeFileSync(path.join(h, "projects/a/forms/second.json"), JSON.stringify({ ...minimal, id: "second" }));
+  fs.utimesSync(path.join(h, "projects/a/forms"), new Date(), new Date(Date.now() + 5000));
+  syncProjects(h, projects, seen);
+  expect(projects).toHaveLength(1);
+  expect(projects[0]!.forms.size).toBe(2);
+  expect(projects[0]!.db).toBe(db);
+
+  // A broken project.json keeps the previous good version.
+  fs.writeFileSync(path.join(h, "projects/a/project.json"), "{nope");
+  fs.utimesSync(path.join(h, "projects/a/project.json"), new Date(), new Date(Date.now() + 9000));
+  const log = console.error;
+  console.error = () => {};
+  syncProjects(h, projects, seen);
+  console.error = log;
+  expect(projects[0]!.forms.size).toBe(2);
+
+  fs.mkdirSync(path.join(h, "projects/b"));
+  fs.writeFileSync(path.join(h, "projects/b/project.json"), JSON.stringify(pj));
+  syncProjects(h, projects, seen);
+  expect(projects.map((p) => p.slug).sort()).toEqual(["a", "b"]);
+
+  fs.rmSync(path.join(h, "projects/b"), { recursive: true });
+  syncProjects(h, projects, seen);
+  expect(projects.map((p) => p.slug)).toEqual(["a"]);
 });
