@@ -61,6 +61,17 @@ Fields have an `id`, a `type`, an always-visible `label`, and optional `required
 - `serve` needs `QUIKFORM_HOME` and `QUIKFORM_SECRET` (32 characters or more). It listens on 127.0.0.1 only, so put a reverse proxy such as Caddy in front. It reloads a project when `project.json` or `.env` changes, or when the `forms/` listing changes, as `form put` does (checked every 10 seconds); a form file edited in place is not detected, so use `form put`. It deletes responses older than `retentionMonths` once a day.
 - Exit codes: 0 success, 1 failure, 2 usage error.
 
+## Deploy
+
+On the server, as the user that runs quikform (a systemd user unit, no root needed):
+
+1. Build and install the binary: `bun run build && install -m 755 dist/quikform ~/.local/bin/quikform`.
+2. Create the secret: `mkdir -p ~/.config/quikform && (umask 077 && echo "QUIKFORM_SECRET=$(openssl rand -hex 32)" > ~/.config/quikform/env)`.
+3. Install and start the unit: `cp deploy/quikform.service ~/.config/systemd/user/ && systemctl --user daemon-reload && systemctl --user enable --now quikform` (run `loginctl enable-linger $USER` once so it runs without a login session).
+4. Add the site block from `deploy/Caddyfile.snippet` to the Caddyfile, then `caddy validate --config /etc/caddy/Caddyfile` and reload Caddy.
+
+Project data lives in `~/.local/share/quikform/projects/` (the unit's `QUIKFORM_HOME`).
+
 ## License
 
 MIT. The bundled Plus Jakarta Sans font files (`src/render/fonts/`, from `@fontsource-variable/plus-jakarta-sans` 5.3.0) are under the SIL Open Font License 1.1, see `src/render/fonts/OFL.txt`.
