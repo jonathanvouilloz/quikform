@@ -78,7 +78,14 @@ body {
 
 .qf-form { margin-top: 2.5rem; }
 
+/* Set by the script: one step at a time, hidden showIf fields, step counter and draft note. */
+.qf [hidden] { display: none !important; }
 .qf-step + .qf-step { margin-top: 3rem; }
+.qf-step[hidden] + .qf-step { margin-top: 0; }
+.qf-stepof { margin: 0 0 1.25rem; color: var(--qf-muted); font-size: 0.9375rem; font-weight: 600; }
+.qf-draft { margin: 0 0 1.25rem; color: var(--qf-muted); font-size: 0.875rem; }
+@keyframes qf-in { from { opacity: 0; transform: translateY(4px); } }
+.qf-in { animation: qf-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .qf-step-title { margin: 0 0 1.75rem; font-size: 1.25rem; line-height: 1.3; font-weight: 700; text-wrap: balance; }
 
 .qf-field { margin: 0 0 2.5rem; padding: 0; border: 0; min-width: 0; }
@@ -169,7 +176,7 @@ body {
 /* Honeypot: off-screen rather than display:none, which some bots skip. */
 .qf-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
-.qf-actions { margin-top: 1rem; }
+.qf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 1rem; }
 .qf-submit {
   display: inline-flex;
   align-items: center;
@@ -188,6 +195,18 @@ body {
 }
 .qf-submit:hover { background: var(--qf-accent-hover, #333); }
 .qf-submit:disabled { cursor: progress; opacity: 0.7; }
+.qf-back {
+  min-height: 48px;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--qf-line);
+  border-radius: var(--qf-radius);
+  background: #fff;
+  color: var(--qf-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qf-back:hover { border-color: var(--qf-text); }
 .qf-arrow { flex: none; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .qf-submit:hover .qf-arrow { transform: translateX(2px); }
 
@@ -204,9 +223,9 @@ body {
     background: #fff;
     box-shadow: 0 -6px 16px -8px rgb(0 0 0 / 0.18);
   }
-  .qf-submit { width: 100%; }
+  .qf-submit { flex: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }

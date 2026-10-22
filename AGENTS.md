@@ -11,7 +11,7 @@ Des formulaires sans friction, écrits par des agents IA à partir d'une phrase,
 
 ## Stack et commandes
 Bun + Hono, HTML rendu serveur, script client écrit à la main, Zod 4, `bun:sqlite`, `bun build --compile` (voir `docs/project/decisions.md`).
-Commandes : créées par le premier plan, à reporter ici.
+Commandes : `bun test` (construit d'abord `dist/app.js`), `bunx tsc --noEmit` (après un premier build), `bun run build:client`, `bun run e2e` (Playwright, téléphone 390×844).
 
 ## Conventions
 - Code, noms, messages de commit et README en anglais (projet open source). Documents de cadrage en français.

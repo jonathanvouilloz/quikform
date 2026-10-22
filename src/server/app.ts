@@ -6,6 +6,8 @@ import { validateResponse } from "../definition/response";
 import { renderBrandCss, renderFormPage, renderNotFoundPage, renderThankYouPage, styles } from "../render/page";
 import { resolveProject, type Project } from "../projects/registry";
 import { flushOutbox, queueAlert } from "../notify/telegram";
+// Built by scripts/build-client.ts (the test preload runs it); the text import embeds it in the compiled binary.
+import clientJs from "../../dist/app.js" with { type: "text" };
 
 const CSP = "default-src 'self'; img-src 'self' https: data:";
 const MIN_AGE_MS = 3000;
@@ -62,6 +64,7 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
   app.notFound(notFound);
 
   app.get("/_qf/app.css", (c) => c.body(styles, 200, { "Content-Type": "text/css; charset=utf-8" }));
+  app.get("/_qf/app.js", (c) => c.body(clientJs, 200, { "Content-Type": "application/javascript; charset=utf-8" }));
   app.get("/_qf/brand.css", (c) => {
     const project = resolveProject(projects, c.req.header("host") ?? "");
     return project ? c.body(renderBrandCss(project.brand), 200, { "Content-Type": "text/css; charset=utf-8" }) : notFound(c);

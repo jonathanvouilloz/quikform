@@ -73,3 +73,14 @@ test("a project without project.json is skipped, others load", () => {
   console.error = orig;
   expect(ps.map((p) => p.slug)).toEqual(["a"]);
 });
+
+test("the demo project in examples/ loads without errors", () => {
+  const h = fs.mkdtempSync(path.join(os.tmpdir(), "qf-home-"));
+  dirs.push(h);
+  fs.cpSync(path.join(import.meta.dir, "../../examples/demo"), path.join(h, "projects/demo"), { recursive: true });
+  const [p] = loadProjects(h);
+  expect(p?.loadErrors).toEqual([]);
+  const demo = p!.forms.get("demo")!;
+  expect(demo.steps).toHaveLength(3);
+  expect(new Set(demo.steps.flatMap((s) => s.fields.map((f) => f.type))).size).toBe(7);
+});

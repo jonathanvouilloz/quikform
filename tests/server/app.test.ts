@@ -124,7 +124,7 @@ test("unknown host and unknown form -> identical 404 without project names", asy
   expect(ta).not.toContain("acme");
 });
 
-test("GET form, thanks and css; /_qf/app.js is not served here", async () => {
+test("GET form, thanks, css and the client script", async () => {
   const { app } = setup();
   const h = { host: "forms.acme.test" };
   const form = await app.request(`/${def.id}`, { headers: h });
@@ -138,7 +138,10 @@ test("GET form, thanks and css; /_qf/app.js is not served here", async () => {
   const app_css = await app.request("/_qf/app.css", { headers: h });
   expect(app_css.headers.get("content-type")).toContain("text/css");
   expect((await app.request("/_qf/brand.css", { headers: h })).headers.get("content-type")).toContain("text/css");
-  expect((await app.request("/_qf/app.js", { headers: h })).status).toBe(404);
+  const js = await app.request("/_qf/app.js", { headers: h });
+  expect(js.status).toBe(200);
+  expect(js.headers.get("content-type")).toContain("application/javascript");
+  expect(await js.text()).toBe(await Bun.file(path.join(import.meta.dir, "../../dist/app.js")).text());
 });
 
 test("every response carries the security headers", async () => {
