@@ -6,7 +6,8 @@ import styles from "./styles.css" with { type: "text" };
 
 export { styles };
 
-export type Brand = { name: string; logoUrl?: string; accent: string };
+// `logo` is a file name inside the project folder, served at /_qf/logo.
+export type Brand = { name: string; logo?: string; accent: string };
 
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
 const DEFAULT_ACCENT = "#111111";
@@ -52,7 +53,7 @@ function page(lang: string, title: string, body: string, tail = ""): string {
 }
 
 const logo = (brand: Brand) =>
-  brand.logoUrl ? `<header class="qf-brand"><img class="qf-logo" src="${e(brand.logoUrl)}" alt="${e(brand.name)}"></header>` : "";
+  brand.logo ? `<header class="qf-brand"><img class="qf-logo" src="/_qf/logo" alt="${e(brand.name)}"></header>` : "";
 
 // JSON inside <script> must not contain "<", ">" or "&", or the definition could close the tag.
 const embedJson = (v: unknown) =>

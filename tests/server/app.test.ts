@@ -152,10 +152,55 @@ test("every response carries the security headers", async () => {
   const { app } = setup();
   for (const [p, host] of [[`/${def.id}`, "forms.acme.test"], ["/nope", "evil.test"], ["/_qf/app.css", "evil.test"]] as const) {
     const res = await app.request(p, { headers: { host } });
-    expect(res.headers.get("content-security-policy")).toBe("default-src 'self'; img-src 'self' https: data:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+    expect(res.headers.get("content-security-policy")).toBe("default-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
     expect(res.headers.get("x-content-type-options")).toBe("nosniff");
     expect(res.headers.get("referrer-policy")).toBe("same-origin");
   }
+});
+
+test("fonts named in app.css are served as immutable woff2; unknown font -> 404", async () => {
+  const { app } = setup();
+  const css = await (await app.request("/_qf/app.css")).text();
+  const urls = [...css.matchAll(/url\(([^)]+)\)/g)].map((m) => m[1]!);
+  expect(urls).toHaveLength(2);
+  for (const u of urls) {
+    expect(u).toStartWith("/_qf/fonts/");
+    const res = await app.request(u);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("font/woff2");
+    expect(res.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+    const file = path.join(import.meta.dir, "../../src/render/fonts", path.basename(u));
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(new Uint8Array(fs.readFileSync(file)));
+  }
+  expect((await app.request("/_qf/fonts/nope.woff2")).status).toBe(404);
+  expect((await app.request("/_qf/fonts/OFL.txt")).status).toBe(404);
+});
+
+test("GET /_qf/logo serves the project's logo file; no logo, missing file or unknown host -> 404", async () => {
+  const { app, project } = setup();
+  const h = { host: "forms.acme.test" };
+  expect((await app.request("/_qf/logo", { headers: h })).status).toBe(404);
+  fs.writeFileSync(path.join(project.dir, "logo.png"), "png bytes");
+  project.brand = { ...project.brand, logo: "logo.png" };
+  const png = await app.request("/_qf/logo", { headers: h });
+  expect(png.status).toBe(200);
+  expect(png.headers.get("content-type")).toBe("image/png");
+  expect(png.headers.get("cache-control")).toBe("public, max-age=3600");
+  expect(await png.text()).toBe("png bytes");
+  expect(png.headers.get("content-security-policy")).toStartWith("default-src 'self';");
+  expect((await app.request("/_qf/logo", { headers: { host: "evil.test" } })).status).toBe(404);
+
+  fs.writeFileSync(path.join(project.dir, "Logo.SVG"), "<svg xmlns='http://www.w3.org/2000/svg'/>");
+  project.brand = { ...project.brand, logo: "Logo.SVG" };
+  const svg = await app.request("/_qf/logo", { headers: h });
+  expect(svg.headers.get("content-type")).toBe("image/svg+xml");
+  // A directly opened SVG must not run script.
+  expect(svg.headers.get("content-security-policy")).toBe("default-src 'none'; style-src 'unsafe-inline'; sandbox");
+
+  project.brand = { ...project.brand, logo: "gone.webp" };
+  const gone = await app.request("/_qf/logo", { headers: h });
+  expect(gone.status).toBe(404);
+  expect(gone.headers.get("content-type")).toContain("text/html");
 });
 
 test("body over 64 KB -> 413, nothing stored", async () => {

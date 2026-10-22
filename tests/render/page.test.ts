@@ -37,23 +37,24 @@ test("privacy note comes before the submit button and the actions close the form
   expect(html).toMatch(/<p class="qf-privacy">[^<]*<\/p><div class="qf-actions" data-actions>.*?<\/div><\/form>/);
 });
 
-test("page has no external URL in src/href except brand.logoUrl", () => {
-  const logoUrl = "https://cdn.example.com/logo.png";
+test("page has no external URL in src/href; a brand logo is served from /_qf/logo", () => {
   const pages = [
-    renderFormPage({ ...base, brand: { ...brand, logoUrl }, def: def(steps), errors: { name: "x" } }),
-    renderThankYouPage(def(minimal), { ...brand, logoUrl }),
+    renderFormPage({ ...base, brand: { ...brand, logo: "logo.png" }, def: def(steps), errors: { name: "x" } }),
+    renderThankYouPage(def(minimal), { ...brand, logo: "logo.png" }),
     renderNotFoundPage(),
   ];
   for (const html of pages) {
     const urls = [...html.matchAll(/(?:src|href)="([^"]*)"/g)].map((m) => m[1]);
     expect(urls.length).toBeGreaterThan(0);
-    for (const u of urls) if (u !== logoUrl) expect(u).toMatch(/^[/#]/);
+    for (const u of urls) expect(u).toMatch(/^[/#]/);
     expect(html).toContain('href="/_qf/app.css"');
     expect(html).toContain('href="/_qf/brand.css"');
     expect(html).not.toMatch(/\sstyle=|<style/);
   }
   expect(pages[0]).toContain('<script src="/_qf/app.js" defer></script>');
-  expect(pages[1]).toMatch(new RegExp(`<img[^>]* src="${logoUrl}" alt="Acme"`));
+  expect(pages[0]).toContain('<img class="qf-logo" src="/_qf/logo" alt="Acme">');
+  expect(pages[1]).toContain('<img class="qf-logo" src="/_qf/logo" alt="Acme">');
+  expect(renderThankYouPage(def(minimal), brand)).not.toContain("<img");
 });
 
 test("definition is embedded as JSON that cannot break out of its script tag", () => {

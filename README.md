@@ -17,12 +17,15 @@ Requires [Bun](https://bun.sh) 1.4 or later.
     $QUIKFORM_HOME/projects/<slug>/
       project.json     domains, brand, retentionMonths, optional telegram chat
       forms/<id>.json  one definition per form (the filename is the form id)
+      logo.png         optional brand logo (png, jpg, webp or svg, at most 200 KB)
       data.sqlite      responses
       .env             TELEGRAM_BOT_TOKEN=... (added by the owner, never by the CLI)
 
 `project.json`:
 
-    { "domains": ["forms.example.com"], "brand": { "name": "Example", "accent": "#1f5eff" }, "retentionMonths": 12 }
+    { "domains": ["forms.example.com"], "brand": { "name": "Example", "accent": "#1f5eff", "logo": "logo.png" }, "retentionMonths": 12 }
+
+To add a logo, copy the file into the project folder first, then set `brand.logo` to its file name (no folder, `.png`, `.jpg`, `.jpeg`, `.webp` or `.svg`, at most 200 KB). quikform serves it at `/_qf/logo` and shows it above the form title, with the brand name as its text alternative. A missing or oversized file is reported as a load error and the page shows no logo. `project init` creates no logo.
 
 ## Form definition
 
@@ -60,4 +63,4 @@ Fields have an `id`, a `type`, an always-visible `label`, and optional `required
 
 ## License
 
-MIT
+MIT. The bundled Plus Jakarta Sans font files (`src/render/fonts/`, from `@fontsource-variable/plus-jakarta-sans` 5.3.0) are under the SIL Open Font License 1.1, see `src/render/fonts/OFL.txt`.

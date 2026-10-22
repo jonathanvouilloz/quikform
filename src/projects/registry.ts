@@ -19,12 +19,15 @@ export type Project = {
 
 export const HOSTNAME = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i;
 const Hostname = z.string().check(z.regex(HOSTNAME));
+// A plain file name in the project folder: no path separator, no "..", an image extension.
+const LOGO = /^(?!.*\.\.)[^/\\]+\.(png|jpe?g|webp|svg)$/i;
+const LOGO_MAX_BYTES = 200 * 1024;
 // Strict objects: a stray key (a botToken in particular) rejects the whole file.
 const ProjectConfig = z.strictObject({
   domains: z.array(Hostname).check(z.minLength(1)),
   brand: z.strictObject({
     name: z.string().check(z.minLength(1)),
-    logoUrl: z.optional(z.url({ protocol: /^https$/ })),
+    logo: z.optional(z.string().check(z.regex(LOGO))),
     accent: z.string(),
   }),
   retentionMonths: z._default(z.int().check(z.positive()), 12),
@@ -72,11 +75,20 @@ export function loadProject(dir: string, db?: ProjectDb): Project {
     if (botToken) telegram = { ...config.telegram, botToken };
     else loadErrors.push("telegram is configured but TELEGRAM_BOT_TOKEN is missing from .env");
   }
+  const brand = { ...config.brand };
+  if (brand.logo) {
+    const stat = fs.statSync(path.join(dir, brand.logo), { throwIfNoEntry: false });
+    const problem = !stat?.isFile() ? "file not found in the project folder" : stat.size > LOGO_MAX_BYTES ? "larger than 200 KB" : "";
+    if (problem) {
+      loadErrors.push(`brand.logo: ${brand.logo}: ${problem}`);
+      delete brand.logo;
+    }
+  }
   return {
     slug: path.basename(dir),
     dir,
     domains: config.domains.map((d) => d.toLowerCase()),
-    brand: config.brand,
+    brand,
     retentionMonths: config.retentionMonths,
     telegram,
     forms: loadForms(dir, loadErrors),

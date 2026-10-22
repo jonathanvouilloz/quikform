@@ -15,33 +15,33 @@ colors:
   error-tint: "#fdf1f0"
 typography:
   display:
-    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", \"Noto Sans Thai\", \"Helvetica Neue\", Arial, sans-serif"
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
     fontSize: "clamp(1.75rem, 1.4rem + 1.6vw, 2.25rem)"
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-0.015em"
   headline:
-    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", \"Noto Sans Thai\", \"Helvetica Neue\", Arial, sans-serif"
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
     fontSize: "1.25rem"
     fontWeight: 700
     lineHeight: 1.3
   title:
-    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", \"Noto Sans Thai\", \"Helvetica Neue\", Arial, sans-serif"
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 700
     lineHeight: 1.35
   body:
-    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", \"Noto Sans Thai\", \"Helvetica Neue\", Arial, sans-serif"
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.5
   label:
-    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", \"Noto Sans Thai\", \"Helvetica Neue\", Arial, sans-serif"
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.5
   caption:
-    fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", \"Noto Sans Thai\", \"Helvetica Neue\", Arial, sans-serif"
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
@@ -111,13 +111,13 @@ components:
 
 quikform has no visual identity of its own to push. A form page is one white, left-aligned column of about 680 px, bold labels above outlined fields, generous air between questions, and a single brand accent supplied per project. Everything that is not the accent is neutral grey on white, so the page reads as part of whichever gym, barbershop or bakery sent the link. The pinned references are Tally for the page (column, bold labels, lettered choice chips, dark button with an arrow) and Typeform for the step mode (thin progress bar at the top, full-width thumb-reach button stuck to the bottom of the phone screen).
 
-The page works without JavaScript; the script only adds step mode, live validation and a local draft, so the system is styled server-rendered first. It loads nothing external: the Content Security Policy is `default-src 'self'`, which is why type is the platform's own sans-serif and the only icon is an inline SVG arrow. Motion is CSS only, short and small, and switched off under `prefers-reduced-motion`.
+The page works without JavaScript; the script only adds step mode, live validation and a local draft, so the system is styled server-rendered first. It loads nothing external: the Content Security Policy is `default-src 'self'`, so the typeface (Plus Jakarta Sans) and the logo are served by quikform itself and the only icon is an inline SVG arrow. Motion is CSS only, short and small, and switched off under `prefers-reduced-motion`.
 
 Rejected from the references: banner photos and gradients, "Made with" / "Powered by" badges, placeholder text as the only hint, underline-only fields, cookie banners.
 
 **Key Characteristics:**
 - One brand accent per project, every other color neutral.
-- System sans-serif only, no web fonts, no external resources.
+- Plus Jakarta Sans, self-hosted, with a system fallback; no external resources.
 - Labels always visible above their field, in bold.
 - Flat white surface; one soft shadow, on the phone's sticky action bar.
 - Touch targets of 44 px minimum (48 px for buttons and text inputs), WCAG 2.2 AA.
@@ -149,10 +149,10 @@ A neutral grey-on-white palette with one slot for the project's brand accent and
 
 ## Typography
 
-**Display Font:** system-ui (with -apple-system, Segoe UI, Roboto, Noto Sans, Noto Sans Thai, Helvetica Neue, Arial, sans-serif)
+**Display Font:** Plus Jakarta Sans (with system-ui, -apple-system, Segoe UI, Roboto, sans-serif)
 **Body Font:** the same stack
 
-**Character:** The platform's own sans-serif in two weights (400 and 700, 600 for links and the Back button). It feels native on every phone and renders Thai through Noto Sans Thai.
+**Character:** Plus Jakarta Sans, the owner's choice: a clean, readable sans-serif in two weights (400 and 700, 600 for links and the Back button). It is self-hosted (variable woff2, latin and latin-ext subsets, served from `/_qf/fonts/`, `font-display: swap`), so the page still loads nothing external. It has no Thai glyphs: Thai text falls back to the system fonts.
 
 ### Hierarchy
 - **Display** (700, `clamp(1.75rem, 1.4rem + 1.6vw, 2.25rem)`, 1.2, -0.015em, balanced wrap): form title and thanks title, once per page.
@@ -232,7 +232,7 @@ A newly shown step or conditional field fades in from 4 px below (0.2 s, `cubic-
 - **Do** keep motion in CSS, under 0.3 s, and removed under `prefers-reduced-motion`.
 
 ### Don't:
-- **Don't** load web fonts, icon fonts, CDNs or any external resource; the CSP is `default-src 'self'`.
+- **Don't** load fonts, icon fonts, CDNs or any resource from another origin; the CSP is `default-src 'self'`. Fonts and the logo are served by quikform.
 - **Don't** add eyebrow labels above titles or step titles.
 - **Don't** use placeholder text as the only hint, or underline-only fields.
 - **Don't** add "Powered by" badges, banner photos, gradients or cookie banners.

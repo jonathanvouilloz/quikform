@@ -125,3 +125,36 @@ test("syncProjects loads, reloads in place keeping the db handle, drops removed 
   syncProjects(h, projects, seen);
   expect(projects.map((p) => p.slug)).toEqual(["a"]);
 });
+
+test("brand.logo: a plain file name in the project folder, image extension, at most 200 KB", () => {
+  const withLogo = (logo: string) => ({ ...pj, brand: { ...pj.brand, logo } });
+  const h = home({
+    "ok/project.json": withLogo("logo.png"),
+    "ok/logo.png": "png bytes",
+    "svg/project.json": { ...withLogo("Mark.SVG"), domains: ["svg.test"] },
+    "svg/Mark.SVG": "<svg/>",
+    "missing/project.json": { ...withLogo("logo.webp"), domains: ["missing.test"] },
+    "big/project.json": { ...withLogo("logo.jpg"), domains: ["big.test"] },
+    "big/logo.jpg": "x".repeat(200 * 1024 + 1),
+    "dir/project.json": { ...withLogo("logo.jpeg"), domains: ["dir.test"] },
+    "dir/logo.jpeg/x": "",
+    "up/project.json": { ...withLogo("../logo.png"), domains: ["up.test"] },
+    "sub/project.json": { ...withLogo("img/logo.png"), domains: ["sub.test"] },
+    "dots/project.json": { ...withLogo("a..png"), domains: ["dots.test"] },
+    "gif/project.json": { ...withLogo("logo.gif"), domains: ["gif.test"] },
+    "url/project.json": { ...pj, domains: ["url.test"], brand: { ...pj.brand, logoUrl: "https://x.test/l.png" } },
+  });
+  const orig = console.error;
+  console.error = () => {};
+  const ps = loadProjects(h);
+  console.error = orig;
+  const by = (slug: string) => ps.find((p) => p.slug === slug);
+  expect([by("ok")!.brand.logo, by("ok")!.loadErrors]).toEqual(["logo.png", []]);
+  expect(by("svg")!.brand.logo).toBe("Mark.SVG");
+  for (const slug of ["missing", "big", "dir"]) {
+    expect(by(slug)!.brand.logo).toBeUndefined();
+    expect(by(slug)!.loadErrors).toHaveLength(1);
+    expect(by(slug)!.loadErrors[0]).toStartWith("brand.logo: ");
+  }
+  for (const slug of ["up", "sub", "dots", "gif", "url"]) expect(by(slug)).toBeUndefined();
+});

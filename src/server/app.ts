@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import path from "node:path";
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HONEYPOT, MIN_AGE_MS } from "../definition/schema";
@@ -8,8 +9,17 @@ import { resolveProject, type Project } from "../projects/registry";
 import { flushOutbox, queueAlert } from "../notify/telegram";
 // Built by scripts/build-client.ts (the test preload runs it); the text import embeds it in the compiled binary.
 import clientJs from "../../dist/app.js" with { type: "text" };
+// File imports give a path that --compile embeds in the binary.
+import latin from "../render/fonts/plus-jakarta-sans-latin-wght-normal.woff2" with { type: "file" };
+import latinExt from "../render/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2" with { type: "file" };
 
-const CSP = "default-src 'self'; img-src 'self' https: data:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+// Keyed by the names styles.css uses; the compiled binary renames the embedded files.
+const FONTS = new Map([["plus-jakarta-sans-latin-wght-normal.woff2", latin], ["plus-jakarta-sans-latin-ext-wght-normal.woff2", latinExt]]);
+
+const CSP = "default-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+// A logo opened directly must not run script, which an SVG could carry.
+const SVG_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+const IMAGE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", svg: "image/svg+xml" };
 const RATE_MAX = 10;
 const RATE_WINDOW_MS = 10 * 60_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -56,7 +66,7 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
 
   app.use(async (c, next) => {
     await next();
-    c.header("Content-Security-Policy", CSP);
+    if (!c.res.headers.has("Content-Security-Policy")) c.header("Content-Security-Policy", CSP);
     c.header("X-Content-Type-Options", "nosniff");
     c.header("Referrer-Policy", "same-origin");
   });
@@ -64,6 +74,23 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
 
   app.get("/_qf/app.css", (c) => c.body(styles, 200, { "Content-Type": "text/css; charset=utf-8" }));
   app.get("/_qf/app.js", (c) => c.body(clientJs, 200, { "Content-Type": "application/javascript; charset=utf-8" }));
+  app.get("/_qf/fonts/:file", async (c) => {
+    const f = FONTS.get(c.req.param("file"));
+    if (!f) return notFound(c);
+    return c.body(await Bun.file(f).bytes(), 200, { "Content-Type": "font/woff2", "Cache-Control": "public, max-age=31536000, immutable" });
+  });
+  app.get("/_qf/logo", async (c) => {
+    const project = resolveProject(projects, c.req.header("host") ?? "");
+    const logo = project?.brand.logo;
+    if (!project || !logo) return notFound(c);
+    // The name was checked on load (plain file name, image extension); the file may have gone since.
+    const file = Bun.file(path.join(project.dir, logo));
+    if (!(await file.exists())) return notFound(c);
+    const type = IMAGE_TYPES[logo.split(".").pop()!.toLowerCase()]!;
+    const headers: Record<string, string> = { "Content-Type": type, "Cache-Control": "public, max-age=3600" };
+    if (type === "image/svg+xml") headers["Content-Security-Policy"] = SVG_CSP;
+    return c.body(await file.bytes(), 200, headers);
+  });
   app.get("/_qf/brand.css", (c) => {
     const project = resolveProject(projects, c.req.header("host") ?? "");
     return project ? c.body(renderBrandCss(project.brand), 200, { "Content-Type": "text/css; charset=utf-8" }) : notFound(c);
