@@ -310,10 +310,10 @@ Requiert l'accord de Jon à chaque étape marquée ⚑.
 **Files:**
 - Create: `deploy/quikform.service`, `deploy/Caddyfile.snippet`, définition `meaw-pricing.json` (dans `$QUIKFORM_HOME/projects/wildcat/forms/`, hors dépôt)
 
-- [ ] **Step 1:** Écrire `meaw-pricing.json` en anglais (`lang: "en"`) à partir des 17 questions envoyées à Meaw, en 4 étapes : Stay & Train (questions 1 à 5), Training only (6 à 9), DTV (10 à 14), Other (15 à 17). Chaque question de vérification est un `yes_no` (« Still correct? ») suivi d'un `long_text` « Correction » visible seulement si la réponse est non ; les questions ouvertes sont en `long_text` ou en `number`. `quikform check` → ok.
-- [ ] **Step 2:** Installer `$QUIKFORM_HOME` (`~/.local/share/quikform`), `quikform project init wildcat --domain formulaire.wildcatmuaythai.com --name "Wildcat Muay Thai"`, `.env` avec le jeton du bot et le `chatId` fournis par Jon ; service systemd utilisateur (`deploy/quikform.service`, `Restart=on-failure`, `MemoryMax=150M`).
-- [ ] **Step 3 ⚑:** Jon pose l'enregistrement DNS `formulaire.wildcatmuaythai.com` vers le serveur (A `187.77.71.11`, AAAA `2a02:4780:79:fe7e::1`).
-- [ ] **Step 4 ⚑:** Ajouter le bloc du domaine au Caddyfile (`reverse_proxy 127.0.0.1:8787`) ; `caddy validate`, puis rechargement. Si le rechargement demande `sudo`, Jon le lance depuis son terminal SSH.
-- [ ] **Step 5:** Vérifier : `curl -sI https://formulaire.wildcatmuaythai.com/meaw-pricing` → 200 ; un envoi de test → ligne en base (`quikform responses --project wildcat`) et alerte Telegram reçue ; supprimer la réponse de test.
+- [x] **Step 1:** Écrire `meaw-pricing.json` en anglais (`lang: "en"`) à partir des 17 questions envoyées à Meaw, en 4 étapes : Stay & Train (questions 1 à 5), Training only (6 à 9), DTV (10 à 14), Other (15 à 17). Chaque question de vérification est un `yes_no` (« Still correct? ») suivi d'un `long_text` « Correction » visible seulement si la réponse est non ; les questions ouvertes sont en `long_text` ou en `number`. `quikform check` → ok.
+- [x] **Step 2:** Installer `$QUIKFORM_HOME` (`~/.local/share/quikform`), `quikform project init wildcat --domain formulaire.wildcatmuaythai.com --name "Wildcat Muay Thai"`, `.env` avec le jeton du bot et le `chatId` fournis par Jon ; service systemd utilisateur (`deploy/quikform.service`, `Restart=on-failure`, `MemoryMax=150M`).
+- [x] **Step 3 ⚑:** Jon pose l'enregistrement DNS `formulaire.wildcatmuaythai.com` vers le serveur (A `187.77.71.11`, AAAA `2a02:4780:79:fe7e::1`).
+- [x] **Step 4 ⚑:** Ajouter le bloc du domaine au Caddyfile (`reverse_proxy 127.0.0.1:8787`) ; `caddy validate`, puis rechargement. Si le rechargement demande `sudo`, Jon le lance depuis son terminal SSH.
+- [x] **Step 5:** Vérifier : `curl -sI https://formulaire.wildcatmuaythai.com/meaw-pricing` → 200 ; un envoi de test → ligne en base (`quikform responses --project wildcat`) et alerte Telegram reçue ; supprimer la réponse de test.
 - [ ] **Step 6 ⚑:** Envoyer le lien à Meaw (Jon).
-- [ ] **Step 7:** Mettre à jour `docs/project/handoff.md` ; commit `chore: deploy files and step 1 handoff`.
+- [x] **Step 7:** Mettre à jour `docs/project/handoff.md` ; commit `chore: deploy files and step 1 handoff`.
