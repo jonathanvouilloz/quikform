@@ -29,6 +29,13 @@ Rien. Branche `step-1`.
 - Vérifié le 2026-10-22 : HTTPS 200 sur `/meaw-pricing` ; envoi de test → une ligne en base et alerte marquée envoyée vers « Wildcat Team » ; réponse de test supprimée (base vide) ; 35 Mo de RAM.
 - Mettre à jour : `bun run build`, `install -m 755 dist/quikform ~/.local/bin/quikform`, `systemctl --user restart quikform`.
 
+## Reprises mineures (revues, non bloquantes)
+- Validation : pas de contrôle min ≤ max ni du type de `showIf.equals` ; quelques règles du schéma sans test.
+- Accessibilité et finition : état coché des pastilles seulement via `:has()` ; `aria-describedby` sur le `fieldset` ; « Retour » à droite de « Suivant » sur téléphone ; titre d'étape et label trop proches en taille ; raccourcis A, B, C non expliqués ; page de remerciement nue ; `scroll-padding-bottom` sans la zone sûre de l'iPhone.
+- Client : bouton bloqué si le navigateur restaure la page depuis son cache (`pageshow`) ; pas de test bout en bout du chemin d'erreur 422 ni de « Retour ».
+- Serveur : un domaine déclaré par deux projets va au premier sans avertissement ; une alerte perdue si `queueAlert` échoue après l'enregistrement.
+- Tests : quelques remplacements de `console.error` sans `try/finally` ; tests de l'outbox sensibles au temps.
+
 ## Pièges connus
 - Reportés, faible impact : limite d'envois non groupée par préfixe IPv6 ; la route du logo suit les liens symboliques ; un logo ajouté après `project.json` n'est vu qu'au prochain changement de `project.json`.
 - Le champ piège s'appelle `website` : cet identifiant de champ est réservé, comme `constructor` et les autres noms hérités.
