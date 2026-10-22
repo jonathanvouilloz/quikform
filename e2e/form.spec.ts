@@ -85,15 +85,18 @@ test("keyboard only on a phone: steps, showIf, draft after reload, submit", asyn
   await page.evaluate(() =>
     document.querySelector("form")!.addEventListener("submit", () => {
       const b = document.querySelector<HTMLButtonElement>(".qf-submit[type='submit']")!;
-      sessionStorage.setItem("qf-e2e-submit", JSON.stringify([b.disabled, b.textContent]));
+      const draft = localStorage.getItem(`qf:${location.host}:demo:1`) !== null;
+      sessionStorage.setItem("qf-e2e-submit", JSON.stringify([b.disabled, b.textContent, draft]));
     }),
   );
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/demo\/thanks$/);
   await expect(page.locator("h1")).toHaveText("Merci");
-  expect(await page.evaluate(() => sessionStorage.getItem("qf-e2e-submit"))).toBe(JSON.stringify([true, "Envoi en cours…"]));
+  expect(await page.evaluate(() => sessionStorage.getItem("qf-e2e-submit"))).toBe(JSON.stringify([true, "Envoi en cours…", true]));
+  // The draft lives until the server has accepted the answer, then the thanks page removes it.
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("qf:")))).toEqual([]);
 
-  const [stored] = await responses(page);
+  const stored = (await responses(page)).find((r: { values: { name: string } }) => r.values.name === "Ana");
   expect(stored.values).toEqual({
     name: "Ana",
     email: "ana@example.com",
@@ -119,4 +122,23 @@ test("a click that leaves an invalid field still lands, even though the error mo
   await expect(page.locator("#has_deadline\\:0")).toBeChecked();
   await expect(page.locator("#kind\\:error")).toHaveText("Ce champ est requis.");
   await expect(page.locator("[data-field='deadline']")).toBeVisible();
+});
+
+test("an answer sent within 3 s of the page load is held back until the server accepts it", async ({ page }) => {
+  await page.goto("/demo");
+  const loaded = Date.now();
+  await page.fill("#name", "Early");
+  await page.fill("#email", "early@example.com");
+  await page.keyboard.press("Enter"); // last field of step 1: on to step 2
+  await page.keyboard.press("a");
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("b");
+  await page.getByRole("button", { name: "Suivant" }).click();
+  await page.getByRole("button", { name: "Envoyer" }).click();
+  expect(Date.now() - loaded).toBeLessThan(3000); // otherwise this test would not exercise the early path
+  await expect(page.locator(".qf-submit[type='submit']")).toBeDisabled();
+  await expect(page.locator(".qf-submit[type='submit']")).toHaveText("Envoi en cours…");
+  await expect(page).toHaveURL(/\/demo\/thanks$/);
+  const stored = (await responses(page)).filter((r: { values: { name: string } }) => r.values.name === "Early");
+  expect(stored).toHaveLength(1);
 });

@@ -98,3 +98,9 @@ test("thank-you and not-found pages", () => {
 test("styles are exported as CSS text", () => {
   expect(styles).toContain(".qf-submit");
 });
+
+test("the thanks page loads the client script and names its form, so the draft can be cleared there", () => {
+  const ty = renderThankYouPage(def(minimal), brand);
+  expect(ty).toContain(`<script src="/_qf/app.js" defer></script>`);
+  expect(ty).toContain(`data-qf-thanks="contact"`);
+});

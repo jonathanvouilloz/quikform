@@ -117,7 +117,9 @@ export function renderThankYouPage(def: FormDefinition, brand: Brand): string {
   return page(
     def.lang,
     def.thankYou.title,
-    `${logo(brand)}<h1 class="qf-title">${e(def.thankYou.title)}</h1><p class="qf-description">${e(def.thankYou.body)}</p>`,
+    // data-qf-thanks tells the client script which form's draft to remove.
+    `${logo(brand)}<h1 class="qf-title" data-qf-thanks="${e(def.id)}">${e(def.thankYou.title)}</h1><p class="qf-description">${e(def.thankYou.body)}</p>`,
+    `<script src="/_qf/app.js" defer></script>`,
   );
 }
 

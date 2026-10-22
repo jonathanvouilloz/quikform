@@ -3,6 +3,8 @@ import * as z from "zod/mini";
 const ID = /^[a-z][a-z0-9_-]{0,47}$/;
 // Name of the anti-spam input on the form page; a field with this id would look like a filled honeypot.
 export const HONEYPOT = "website";
+// The server ignores answers sent sooner than this after the page was served; the client waits it out.
+export const MIN_AGE_MS = 3000;
 
 const CHOICE_TYPES = ["single_choice", "multiple_choice"];
 

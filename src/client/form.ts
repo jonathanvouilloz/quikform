@@ -1,6 +1,6 @@
 // Progressive enhancement of the server-rendered form: one step at a time, live validation, showIf,
 // keyboard shortcuts and a local draft. The form still submits as a normal POST; the server validates again.
-import { HONEYPOT, type FormDefinition } from "../definition/schema";
+import { HONEYPOT, MIN_AGE_MS, type FormDefinition } from "../definition/schema";
 import { validateResponse, visibleFields } from "../definition/response";
 import { t, type StringKey } from "../i18n/strings";
 
@@ -17,7 +17,11 @@ export function toRaw(fd: FormData): Raw {
   return raw;
 }
 
-export const draftKey = (host: string, def: FormDefinition) => `qf:${host}:${def.id}:${def.version}`;
+export const draftPrefix = (host: string, formId: string) => `qf:${host}:${formId}:`;
+export const draftKey = (host: string, def: FormDefinition) => draftPrefix(host, def.id) + def.version;
+
+// Time still to wait so the answer reaches the server after MIN_AGE_MS; the page loads after the server stamped it.
+export const submitDelay = (loadedAt: number, now: number) => Math.max(0, MIN_AGE_MS - (now - loadedAt));
 
 export const draftValues = (raw: Raw): Raw =>
   Object.fromEntries(Object.entries(raw).filter(([k]) => k !== HONEYPOT && k !== "_sid" && k !== "_t"));
@@ -52,9 +56,11 @@ export function saveDraft(key: string, draft: Draft): boolean {
     return false;
   }
 }
-function clearDraft(key: string): boolean {
+// Every version of one form's draft: called on the thanks page, once the server has the answer.
+export function clearDrafts(prefix: string): boolean {
   try {
-    localStorage.removeItem(key);
+    const keys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i)).filter((k) => k?.startsWith(prefix));
+    for (const k of keys) localStorage.removeItem(k!);
     return true;
   } catch {
     return false;
@@ -64,6 +70,7 @@ function clearDraft(key: string): boolean {
 type Control = HTMLInputElement | HTMLTextAreaElement;
 
 function init(form: HTMLFormElement, def: FormDefinition) {
+  const loadedAt = Date.now();
   const say = (k: StringKey, vars?: Record<string, number>) => t(def.lang, def.address, k, vars);
   const ids = def.steps.flatMap((s) => s.fields.map((f) => f.id));
   const sections = [...form.querySelectorAll<HTMLElement>("[data-step]")];
@@ -282,9 +289,14 @@ function init(form: HTMLFormElement, def: FormDefinition) {
       return;
     }
     sent = true;
-    clearDraft(key);
     submit.disabled = true;
     submit.firstChild!.textContent = say("sending");
+    // Sent too early, the answer would be dropped as spam: hold it. form.submit() fires no submit event.
+    const wait = submitDelay(loadedAt, Date.now());
+    if (wait > 0) {
+      e.preventDefault();
+      setTimeout(() => form.submit(), wait);
+    }
   });
 }
 
@@ -292,4 +304,6 @@ if (typeof document !== "undefined") {
   const form = document.querySelector<HTMLFormElement>("form.qf-form");
   const def = document.getElementById("qf-def")?.textContent;
   if (form && def) init(form, JSON.parse(def));
+  const thanks = document.querySelector<HTMLElement>("[data-qf-thanks]");
+  if (thanks) clearDrafts(draftPrefix(location.host, thanks.dataset.qfThanks!));
 }

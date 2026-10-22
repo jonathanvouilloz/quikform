@@ -1,7 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
 import steps from "../fixtures/steps.json";
 import { HONEYPOT, parseDefinition } from "../../src/definition/schema";
-import { activeSteps, draftKey, draftValues, readDraft, saveDraft, stepErrors, toRaw } from "../../src/client/form";
+import { activeSteps, clearDrafts, draftKey, draftPrefix, draftValues, readDraft, saveDraft, stepErrors, submitDelay, toRaw } from "../../src/client/form";
+import { MIN_AGE_MS } from "../../src/definition/schema";
 
 const parsed = parseDefinition(steps);
 if (!parsed.ok) throw new Error(parsed.errors.join());
@@ -54,6 +55,10 @@ afterEach(() => {
 function memoryStorage() {
   const m = new Map<string, string>();
   return {
+    get length() {
+      return m.size;
+    },
+    key: (i: number) => [...m.keys()][i] ?? null,
     getItem: (k: string) => m.get(k) ?? null,
     setItem: (k: string, v: string) => void m.set(k, v),
     removeItem: (k: string) => void m.delete(k),
@@ -75,7 +80,25 @@ test("blocked storage never throws", () => {
   const boom = () => {
     throw new Error("SecurityError");
   };
-  globalThis.localStorage = { getItem: boom, setItem: boom, removeItem: boom } as unknown as Storage;
+  globalThis.localStorage = { getItem: boom, setItem: boom, removeItem: boom, key: boom, get length() { return boom(); } } as unknown as Storage;
   expect(saveDraft("k", { step: 0, values: {} })).toBe(false);
   expect(readDraft("k")).toBeUndefined();
+  expect(clearDrafts("qf:")).toBe(false);
+});
+
+test("submitDelay waits out the server's minimum age, counted from the page load", () => {
+  expect(MIN_AGE_MS).toBe(3000);
+  expect(submitDelay(10_000, 10_500)).toBe(2500);
+  expect(submitDelay(10_000, 13_000)).toBe(0);
+  expect(submitDelay(10_000, 20_000)).toBe(0);
+});
+
+test("clearDrafts removes every version of one form's draft and nothing else", () => {
+  globalThis.localStorage = memoryStorage();
+  for (const k of ["qf:h:survey:1", "qf:h:survey:2", "qf:h:survey-2:1", "qf:other:survey:1", "unrelated"]) localStorage.setItem(k, "{}");
+  expect(draftPrefix("h", "survey")).toBe("qf:h:survey:");
+  expect(clearDrafts("qf:h:survey:")).toBe(true);
+  expect(["qf:h:survey:1", "qf:h:survey:2", "qf:h:survey-2:1", "qf:other:survey:1", "unrelated"].map((k) => localStorage.getItem(k) !== null)).toEqual([
+    false, false, true, true, true,
+  ]);
 });

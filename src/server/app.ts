@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { HONEYPOT } from "../definition/schema";
+import { HONEYPOT, MIN_AGE_MS } from "../definition/schema";
 import { validateResponse } from "../definition/response";
 import { renderBrandCss, renderFormPage, renderNotFoundPage, renderThankYouPage, styles } from "../render/page";
 import { resolveProject, type Project } from "../projects/registry";
@@ -10,7 +10,6 @@ import { flushOutbox, queueAlert } from "../notify/telegram";
 import clientJs from "../../dist/app.js" with { type: "text" };
 
 const CSP = "default-src 'self'; img-src 'self' https: data:";
-const MIN_AGE_MS = 3000;
 const RATE_MAX = 10;
 const RATE_WINDOW_MS = 10 * 60_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
