@@ -31,7 +31,7 @@ quikform is self-hosted: you install it once on a server you control, and every 
 3. **`quikform form put`** validates it again and copies it into the project folder. The running server picks it up within 10 seconds, with no restart.
 4. **A visitor opens `https://<your domain>/<form id>`** and fills in the form, usually on a phone. The page works without JavaScript; the small script adds steps, live validation, conditional fields and a draft kept in the browser until the form is sent.
 5. **The server validates the answer again**, stores it in the project's `data.sqlite`, shows the thank-you page and, if you enabled it, sends a Telegram message.
-6. **Your agent reads the answers** with `quikform responses --json`.
+6. **Your agent reads the answers** with `quikform responses --json`, and you can read them yourself in the read-only admin (see "Admin").
 
 ## What you need, and what is open to the internet
 
@@ -64,6 +64,8 @@ The real risk sits with **the AI agent that reads the answers**. Someone could t
 - Answers deleted automatically after 12 months by default.
 - Public forms (anyone with the URL) or private forms (one link per person, revocable; each answer records which link was used).
 - One shared base domain for all projects (`<project>.forms.example.com`) or a domain per project.
+- A read-only admin behind a password: projects, forms, who has answered, the links to share, every answer question by question.
+- A ready-made Docker image (`ghcr.io/jonathanvouilloz/quikform`) and an agent skill (`skills/quikform/SKILL.md`).
 
 Not in v1: file uploads, payments, sending emails, a visual editor, statistics. The answer draft lives in the visitor's browser only; it is not saved on the server before the form is sent.
 
