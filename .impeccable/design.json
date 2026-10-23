@@ -1,0 +1,678 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-23T00:00:00Z",
+  "title": "Design System: quikform",
+  "extensions": {
+    "colorMeta": {
+      "accent-fallback": {
+        "role": "primary",
+        "displayName": "Brand Accent (fallback near-black)",
+        "canonical": "#111111",
+        "tonalRamp": [
+          "#050505",
+          "#080808",
+          "#0c0c0c",
+          "#0f0f0f",
+          "#414141",
+          "#7c7c7c",
+          "#b8b8b8",
+          "#e7e7e7"
+        ],
+        "note": "Replaced per project by brand.accent via /_qf/brand.css."
+      },
+      "accent-hover-fallback": {
+        "role": "primary",
+        "displayName": "Accent Hover (fallback)",
+        "canonical": "#333333",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#1a1a1a",
+          "#242424",
+          "#2e2e2e",
+          "#5c5c5c",
+          "#8f8f8f",
+          "#c2c2c2",
+          "#ebebeb"
+        ],
+        "note": "Computed per project: 15% toward black or 25% toward white."
+      },
+      "selected-tint-fallback": {
+        "role": "primary",
+        "displayName": "Selected Tint (fallback)",
+        "canonical": "#f2f2f2",
+        "tonalRamp": [
+          "#494949",
+          "#797979",
+          "#a9a9a9",
+          "#dadada",
+          "#f5f5f5",
+          "#f8f8f8",
+          "#fbfbfb",
+          "#fefefe"
+        ],
+        "note": "Computed per project: accent mixed 90% with white."
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1a1a1a",
+        "tonalRamp": [
+          "#080808",
+          "#0d0d0d",
+          "#121212",
+          "#171717",
+          "#484848",
+          "#818181",
+          "#bababa",
+          "#e8e8e8"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Grey",
+        "canonical": "#595959",
+        "tonalRamp": [
+          "#1b1b1b",
+          "#2c2c2c",
+          "#3e3e3e",
+          "#505050",
+          "#7a7a7a",
+          "#a4a4a4",
+          "#cdcdcd",
+          "#eeeeee"
+        ]
+      },
+      "placeholder": {
+        "role": "neutral",
+        "displayName": "Placeholder Grey",
+        "canonical": "#707070",
+        "tonalRamp": [
+          "#222222",
+          "#383838",
+          "#4e4e4e",
+          "#656565",
+          "#8d8d8d",
+          "#b0b0b0",
+          "#d4d4d4",
+          "#f1f1f1"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Boundary Grey",
+        "canonical": "#8a8a8a",
+        "tonalRamp": [
+          "#292929",
+          "#454545",
+          "#616161",
+          "#7c7c7c",
+          "#a1a1a1",
+          "#bfbfbf",
+          "#dcdcdc",
+          "#f3f3f3"
+        ]
+      },
+      "track": {
+        "role": "neutral",
+        "displayName": "Track Grey",
+        "canonical": "#ececec",
+        "tonalRamp": [
+          "#474747",
+          "#767676",
+          "#a5a5a5",
+          "#d4d4d4",
+          "#f0f0f0",
+          "#f5f5f5",
+          "#f9f9f9",
+          "#fdfdfd"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Paper White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#4d4d4d",
+          "#808080",
+          "#b2b2b2",
+          "#e6e6e6",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "error": {
+        "role": "tertiary",
+        "displayName": "Error Red",
+        "canonical": "#b3261e",
+        "tonalRamp": [
+          "#360b09",
+          "#5a130f",
+          "#7d1b15",
+          "#a1221b",
+          "#c2514b",
+          "#d58883",
+          "#e8bebc",
+          "#f7e9e8"
+        ]
+      },
+      "error-tint": {
+        "role": "tertiary",
+        "displayName": "Error Wash",
+        "canonical": "#fdf1f0",
+        "tonalRamp": [
+          "#4c4848",
+          "#7e7878",
+          "#b1a9a8",
+          "#e4d9d8",
+          "#fdf4f3",
+          "#fef7f7",
+          "#fefbfa",
+          "#fffefe"
+        ]
+      },
+      "brand-ink": {
+        "role": "neutral",
+        "displayName": "Brand Ink",
+        "canonical": "#141414",
+        "tonalRamp": [
+          "#060606",
+          "#0a0a0a",
+          "#0e0e0e",
+          "#121212",
+          "#434343",
+          "#7e7e7e",
+          "#b8b8b8",
+          "#e8e8e8"
+        ],
+        "note": "Landing only. Logo ink: text, solid button, borders, code panels."
+      },
+      "brand-ink-hover": {
+        "role": "neutral",
+        "displayName": "Brand Ink Hover",
+        "canonical": "#333333",
+        "tonalRamp": [
+          "#0f0f0f",
+          "#1a1a1a",
+          "#242424",
+          "#2e2e2e",
+          "#5c5c5c",
+          "#8f8f8f",
+          "#c2c2c2",
+          "#ebebeb"
+        ],
+        "note": "Landing only. Solid button hover."
+      },
+      "coral": {
+        "role": "primary",
+        "displayName": "Coral",
+        "canonical": "#f04e37",
+        "tonalRamp": [
+          "#481711",
+          "#78271c",
+          "#a83726",
+          "#d84632",
+          "#f3715f",
+          "#f79e91",
+          "#facac3",
+          "#feedeb"
+        ],
+        "note": "Landing only. The filled centre of a radio dot, nothing else."
+      },
+      "rule-soft": {
+        "role": "neutral",
+        "displayName": "Soft Rule",
+        "canonical": "#d9d9d6",
+        "tonalRamp": [
+          "#414140",
+          "#6c6c6b",
+          "#989896",
+          "#c3c3c1",
+          "#e1e1de",
+          "#eaeae8",
+          "#f4f4f3",
+          "#fbfbfb"
+        ],
+        "note": "Landing only. 1px rules between list items, inline-code border."
+      },
+      "wash": {
+        "role": "neutral",
+        "displayName": "Wash",
+        "canonical": "#f6f6f4",
+        "tonalRamp": [
+          "#4a4a49",
+          "#7b7b7a",
+          "#acacab",
+          "#dddddc",
+          "#f8f8f6",
+          "#fafaf9",
+          "#fcfcfc",
+          "#fefefe"
+        ],
+        "note": "Landing only. Footer, inline code, capture panel, line-button hover."
+      },
+      "selection-wash": {
+        "role": "neutral",
+        "displayName": "Selection Wash",
+        "canonical": "#e3e3df",
+        "tonalRamp": [
+          "#444443",
+          "#727270",
+          "#9f9f9c",
+          "#ccccc9",
+          "#e9e9e5",
+          "#f0f0ed",
+          "#f7f7f5",
+          "#fcfcfc"
+        ],
+        "note": "Landing only. Text selection."
+      },
+      "code-ink": {
+        "role": "neutral",
+        "displayName": "Code Ink",
+        "canonical": "#ecebe6",
+        "tonalRamp": [
+          "#474745",
+          "#767673",
+          "#a5a4a1",
+          "#d4d4cf",
+          "#f0efeb",
+          "#f5f4f1",
+          "#f9f9f8",
+          "#fdfdfc"
+        ],
+        "note": "Landing only. Code text on Brand Ink."
+      },
+      "code-dim": {
+        "role": "neutral",
+        "displayName": "Code Dim",
+        "canonical": "#9b9a94",
+        "tonalRamp": [
+          "#2f2e2c",
+          "#4e4d4a",
+          "#6c6c68",
+          "#8c8b85",
+          "#afaea9",
+          "#c8c7c4",
+          "#e1e1df",
+          "#f5f5f4"
+        ],
+        "note": "Landing only. Prompts, comments, command output (6.6:1 on ink)."
+      },
+      "code-key": {
+        "role": "neutral",
+        "displayName": "Code Key",
+        "canonical": "#a9a79f",
+        "tonalRamp": [
+          "#333230",
+          "#545450",
+          "#76756f",
+          "#98968f",
+          "#bab9b2",
+          "#d0cfca",
+          "#e5e5e2",
+          "#f6f6f5"
+        ],
+        "note": "Landing only. JSON keys (7.4:1 on ink)."
+      },
+      "code-str": {
+        "role": "neutral",
+        "displayName": "Code String",
+        "canonical": "#f4f3ef",
+        "tonalRamp": [
+          "#494948",
+          "#7a7a78",
+          "#abaaa7",
+          "#dcdbd7",
+          "#f6f5f2",
+          "#f9f8f6",
+          "#fcfbfa",
+          "#fefefd"
+        ],
+        "note": "Landing only. JSON strings."
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Form and thanks title, once per page."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Step title."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Field label and legend."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Inputs, choices, buttons, description."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Help, error and step counter text."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Privacy note, draft note, phone step counter."
+      },
+      "brand-display": {
+        "displayName": "Brand Display",
+        "purpose": "Landing hero promise, two lines."
+      },
+      "brand-headline": {
+        "displayName": "Brand Headline",
+        "purpose": "Landing section titles."
+      },
+      "brand-statement": {
+        "displayName": "Brand Statement",
+        "purpose": "Landing \"why\" questions, led by a radio dot."
+      },
+      "brand-lede": {
+        "displayName": "Brand Lede",
+        "purpose": "Landing hero sentence."
+      },
+      "brand-title": {
+        "displayName": "Brand Title",
+        "purpose": "Landing use-case names."
+      },
+      "brand-body": {
+        "displayName": "Brand Body",
+        "purpose": "Landing running text."
+      },
+      "brand-small": {
+        "displayName": "Brand Small",
+        "purpose": "Landing captions, notes, language pill."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Landing terminal command and inline code. Code only."
+      },
+      "mono-panel": {
+        "displayName": "Mono Panel",
+        "purpose": "Landing code panels."
+      },
+      "mono-compact": {
+        "displayName": "Mono Compact",
+        "purpose": "Landing code blocks on phones (below 640px), scrolling sideways."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sticky-bar-edge",
+        "value": "0 -6px 16px -8px rgb(0 0 0 / 0.18)",
+        "purpose": "Phone sticky action bar only."
+      },
+      {
+        "name": "selected-ring",
+        "value": "inset 0 0 0 1px var(--qf-ink, #111)",
+        "purpose": "Doubled border on a selected choice (red variant on invalid fields)."
+      },
+      {
+        "name": "tab-checked-ring",
+        "value": "inset 0 0 0 1px #141414",
+        "purpose": "Landing only. Doubled ink border on the checked radio tab."
+      },
+      {
+        "name": "code-scroll-edge",
+        "value": "radial-gradient(farthest-side at 0 50%, rgb(255 255 255 / 0.22), transparent) left / 12px 100% no-repeat scroll",
+        "purpose": "Landing only, phones: edge glow inside code panels while more code is hidden to the side (mirrored on the right)."
+      }
+    ],
+    "focus": {
+      "value": "2px solid var(--qf-focus, #111)",
+      "offset": "2px"
+    },
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Step fade-in (0.2s), arrow nudge (0.2s), progress width (0.3s)."
+      },
+      {
+        "name": "state",
+        "value": "0.15s ease-out",
+        "purpose": "Border, background and ring changes on buttons and chips."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Removes every transition and animation."
+      },
+      {
+        "name": "panel-in",
+        "value": "0.25s cubic-bezier(0.16, 1, 0.3, 1), from opacity 0 and translateY(4px)",
+        "purpose": "Landing only. Radio-tab panel reveal."
+      },
+      {
+        "name": "arrow-nudge-landing",
+        "value": "translateX(3px), 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Landing only. Arrow in the line button on hover."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "max-width: 639.98px"
+      },
+      {
+        "name": "landing-stack",
+        "value": "max-width: 900px"
+      },
+      {
+        "name": "landing-phone",
+        "value": "max-width: 640px"
+      }
+    ],
+    "focusLanding": {
+      "value": "2px solid #141414",
+      "offset": "3px",
+      "note": "Landing only."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Submit and Next: accent fill, computed on-accent text, inline arrow.",
+      "html": "<button class=\"ds-btn-primary\">Suivant <svg aria-hidden=\"true\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" class=\"ds-arrow\"><path d=\"M3 8h10M9 4l4 4-4 4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:0.5rem;min-height:48px;padding:0.75rem 1.5rem;border:0;border-radius:8px;background:var(--qf-accent,#111);color:var(--qf-on-accent,#fff);font:700 1rem/1.5 \"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;cursor:pointer;transition:background-color 0.15s ease-out}.ds-btn-primary:hover{background:var(--qf-accent-hover,#333)}.ds-btn-primary:focus-visible{outline:2px solid var(--qf-focus,#111);outline-offset:2px}.ds-arrow{transition:transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)}.ds-btn-primary:hover .ds-arrow{transform:translateX(2px)}"
+    },
+    {
+      "name": "Back Button",
+      "kind": "button",
+      "refersTo": "button-back",
+      "description": "Previous step: outlined, neutral.",
+      "html": "<button class=\"ds-btn-back\">Retour</button>",
+      "css": ".ds-btn-back{min-height:48px;padding:0.75rem 1.25rem;border:1px solid #8a8a8a;border-radius:8px;background:#fff;color:#1a1a1a;font:600 1rem/1.5 \"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;cursor:pointer}.ds-btn-back:hover{border-color:#1a1a1a}.ds-btn-back:focus-visible{outline:2px solid var(--qf-focus,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Bold label above, muted help, outlined 48 px input.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-n\">Votre nom</label><p class=\"ds-help\">80 caractères au maximum.</p><input class=\"ds-input\" id=\"ds-n\" type=\"text\" placeholder=\"Ada\"></div>",
+      "css": ".ds-field{font:400 1rem/1.5 \"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;color:#1a1a1a;max-width:680px}.ds-label{display:block;margin:0 0 0.5rem;font-size:1.125rem;line-height:1.35;font-weight:700}.ds-help{margin:-0.25rem 0 0.625rem;color:#595959;font-size:0.9375rem}.ds-input{display:block;width:100%;box-sizing:border-box;min-height:48px;padding:0.625rem 0.875rem;border:1px solid #8a8a8a;border-radius:8px;background:#fff;color:inherit;font:inherit;font-size:max(1rem,16px)}.ds-input::placeholder{color:#707070;opacity:1}.ds-input:hover{border-color:#1a1a1a}.ds-input:focus-visible{border-color:var(--qf-focus,#111);outline:2px solid var(--qf-focus,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Text Field, Error",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Red message above the control, red border with inset ring.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-e\">Votre adresse email</label><p class=\"ds-error\">Ce champ est requis.</p><input class=\"ds-input ds-invalid\" id=\"ds-e\" type=\"email\" aria-invalid=\"true\"></div>",
+      "css": ".ds-field{font:400 1rem/1.5 \"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;color:#1a1a1a;max-width:680px}.ds-label{display:block;margin:0 0 0.5rem;font-size:1.125rem;line-height:1.35;font-weight:700}.ds-error{margin:0 0 0.5rem;color:#b3261e;font-size:0.9375rem;font-weight:600}.ds-input{display:block;width:100%;box-sizing:border-box;min-height:48px;padding:0.625rem 0.875rem;border:1px solid #b3261e;box-shadow:inset 0 0 0 1px #b3261e;border-radius:8px;background:#fff;font:inherit}.ds-input:focus-visible{outline:2px solid var(--qf-focus,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Choice Chips",
+      "kind": "chip",
+      "refersTo": "choice-option",
+      "description": "Bordered options with a lettered key; selected gets ink ring, tint fill and accent key.",
+      "html": "<div class=\"ds-options\"><label class=\"ds-option\"><input type=\"radio\" name=\"ds-c\"><span class=\"ds-key\">A</span>Site vitrine</label><label class=\"ds-option\"><input type=\"radio\" name=\"ds-c\" checked><span class=\"ds-key\">B</span>Boutique en ligne</label><label class=\"ds-option\"><input type=\"radio\" name=\"ds-c\"><span class=\"ds-key\">C</span>Application</label></div>",
+      "css": ".ds-options{display:flex;flex-direction:column;align-items:flex-start;gap:0.5rem;font:400 1rem/1.5 \"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;color:#1a1a1a}.ds-option{position:relative;display:inline-flex;align-items:center;gap:0.625rem;min-height:44px;padding:0.5rem 1rem 0.5rem 0.625rem;border:1px solid #8a8a8a;border-radius:8px;background:#fff;cursor:pointer;transition:border-color 0.15s ease-out,background-color 0.15s ease-out,box-shadow 0.15s ease-out}.ds-option input{position:absolute;opacity:0;width:1px;height:1px;margin:0}.ds-option:hover{border-color:#1a1a1a}.ds-key{display:inline-grid;place-items:center;min-width:1.5rem;height:1.5rem;border:1px solid #8a8a8a;border-radius:4px;font-size:0.8125rem;font-weight:700;line-height:1;background:#fff}.ds-option:has(input:checked){border-color:var(--qf-ink,#111);box-shadow:inset 0 0 0 1px var(--qf-ink,#111);background:var(--qf-tint,#f2f2f2)}.ds-option:has(input:checked) .ds-key{border-color:var(--qf-accent,#111);background:var(--qf-accent,#111);color:var(--qf-on-accent,#fff)}.ds-option:has(input:focus-visible){outline:2px solid var(--qf-focus,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Error Summary",
+      "kind": "card",
+      "refersTo": "error-summary",
+      "description": "Top-of-form list of failed fields after a server-side rejection.",
+      "html": "<div class=\"ds-summary\" role=\"alert\"><h2 class=\"ds-summary-title\">Veuillez corriger les champs suivants</h2><ul><li><a href=\"#\">Votre nom</a><span class=\"ds-summary-msg\">Ce champ est requis.</span></li></ul></div>",
+      "css": ".ds-summary{padding:1rem 1.25rem;border:2px solid #b3261e;border-radius:8px;background:#fdf1f0;font:400 1rem/1.5 \"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;color:#1a1a1a}.ds-summary-title{margin:0 0 0.5rem;font-size:1rem;font-weight:700}.ds-summary ul{margin:0;padding:0;list-style:none}.ds-summary li{padding:0.25rem 0}.ds-summary a{color:#b3261e;font-weight:600;text-underline-offset:0.2em}.ds-summary a:focus-visible{outline:2px solid var(--qf-focus,#111);outline-offset:2px}.ds-summary-msg{display:block}"
+    },
+    {
+      "name": "Action Row with Step Counter",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "Privacy note, then Next, Back and the step counter at the row's end.",
+      "html": "<div class=\"ds-end\"><p class=\"ds-privacy\">Vos réponses servent uniquement à vous recontacter et sont conservées 12 mois.</p><div class=\"ds-actions\"><button class=\"ds-btn-primary\">Suivant <svg aria-hidden=\"true\" viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" class=\"ds-arrow\"><path d=\"M3 8h10M9 4l4 4-4 4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><button class=\"ds-btn-back\">Retour</button><p class=\"ds-stepof\">Étape 2 sur 3</p></div></div>",
+      "css": ".ds-end{font:400 1rem/1.5 \"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif;color:#1a1a1a;max-width:680px}.ds-privacy{margin:0 0 1.25rem;color:#595959;font-size:0.875rem}.ds-actions{display:flex;flex-wrap:wrap;align-items:center;gap:0.75rem}.ds-btn-primary{display:inline-flex;align-items:center;gap:0.5rem;min-height:48px;padding:0.75rem 1.5rem;border:0;border-radius:8px;background:var(--qf-accent,#111);color:var(--qf-on-accent,#fff);font:inherit;font-weight:700;cursor:pointer}.ds-btn-primary:hover{background:var(--qf-accent-hover,#333)}.ds-btn-back{min-height:48px;padding:0.75rem 1.25rem;border:1px solid #8a8a8a;border-radius:8px;background:#fff;color:#1a1a1a;font:inherit;font-weight:600;cursor:pointer}.ds-btn-back:hover{border-color:#1a1a1a}.ds-btn-primary:focus-visible,.ds-btn-back:focus-visible{outline:2px solid var(--qf-focus,#111);outline-offset:2px}.ds-stepof{margin:0 0 0 auto;color:#595959;font-size:0.9375rem;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Progress Bar",
+      "kind": "custom",
+      "refersTo": "progress-bar",
+      "description": "Thin step progress pinned to the top edge in step mode.",
+      "html": "<progress class=\"ds-progress\" max=\"3\" value=\"1\" aria-label=\"Étape 1 sur 3\"></progress>",
+      "css": ".ds-progress{display:block;width:100%;height:4px;border:0;background:#ececec;appearance:none;-webkit-appearance:none;color:var(--qf-accent,#111)}.ds-progress::-webkit-progress-bar{background:#ececec}.ds-progress::-webkit-progress-value{background:var(--qf-accent,#111);transition:width 0.3s cubic-bezier(0.16,1,0.3,1)}.ds-progress::-moz-progress-bar{background:var(--qf-accent,#111)}"
+    },
+    {
+      "name": "Brand Solid Button",
+      "kind": "button",
+      "refersTo": "brand-button-solid",
+      "description": "Landing only. Ink fill, the main call to action (GitHub).",
+      "html": "<a class=\"ds-brand-solid\" href=\"#\">View on GitHub</a>",
+      "css": ".ds-brand-solid{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:12px 22px;border-radius:8px;border:1.5px solid #141414;background:#141414;color:#fff;font:700 1rem/1.6 'Plus Jakarta Sans',system-ui,sans-serif;text-decoration:none;transition:background-color .15s ease-out}.ds-brand-solid:hover{background:#333;border-color:#333}.ds-brand-solid:focus-visible{outline:2px solid #141414;outline-offset:3px}"
+    },
+    {
+      "name": "Brand Line Button",
+      "kind": "button",
+      "refersTo": "brand-button-line",
+      "description": "Landing only. Ink-bordered secondary action with an arrow.",
+      "html": "<a class=\"ds-brand-line\" href=\"#\">Install it <svg class=\"ds-arrow\" viewBox=\"0 0 16 16\" width=\"18\" height=\"18\" aria-hidden=\"true\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 8h10M9 4l4 4-4 4\"/></svg></a>",
+      "css": ".ds-brand-line{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:12px 22px;border-radius:8px;border:1.5px solid #141414;background:#fff;color:#141414;font:700 1rem/1.6 'Plus Jakarta Sans',system-ui,sans-serif;text-decoration:none;transition:background-color .15s ease-out}.ds-brand-line:hover{background:#f6f6f4}.ds-brand-line .ds-arrow{transition:transform .2s cubic-bezier(.16,1,.3,1)}.ds-brand-line:hover .ds-arrow{transform:translateX(3px)}.ds-brand-line:focus-visible{outline:2px solid #141414;outline-offset:3px}"
+    },
+    {
+      "name": "Radio Tabs",
+      "kind": "custom",
+      "refersTo": "radio-tab",
+      "description": "Landing signature. Native radios as tabs; the checked one shows the coral dot.",
+      "html": "<div class=\"ds-tabs\"><input type=\"radio\" name=\"ds-t\" id=\"ds-t1\" checked><label for=\"ds-t1\"><span class=\"ds-dot\"></span>definition.json</label><input type=\"radio\" name=\"ds-t\" id=\"ds-t2\"><label for=\"ds-t2\"><span class=\"ds-dot\"></span>On the phone</label></div>",
+      "css": ".ds-tabs{display:flex;gap:8px;font:600 .9375rem/1.6 'Plus Jakarta Sans',system-ui,sans-serif;color:#141414}.ds-tabs input{position:absolute;opacity:0}.ds-tabs label{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:8px 16px 8px 12px;border:1px solid #8a8a8a;border-radius:8px;cursor:pointer;transition:border-color .15s ease-out}.ds-tabs label:hover{border-color:#141414}.ds-dot{width:16px;height:16px;border-radius:50%;border:3.04px solid #8a8a8a}.ds-tabs input:checked+label{border-color:#141414;box-shadow:inset 0 0 0 1px #141414}.ds-tabs input:checked+label .ds-dot{border-color:#141414;background:radial-gradient(circle,#f04e37 0 2.72px,transparent 3.22px)}.ds-tabs input:focus-visible+label{outline:2px solid #141414;outline-offset:3px}"
+    },
+    {
+      "name": "Code Panel",
+      "kind": "card",
+      "refersTo": "code-panel",
+      "description": "Landing only. Ink panel for JSON and commands; prompts dimmed.",
+      "html": "<pre class=\"ds-code\"><span class=\"ds-p\">$ </span>quikform form put \\\n    --project northwind onboarding.json\n<span class=\"ds-p\">ok onboarding v1</span></pre>",
+      "css": ".ds-code{background:#141414;color:#ecebe6;border-radius:8px;padding:16px 20px;margin:0;font:.875rem/1.7 ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;overflow-x:auto}.ds-p{color:#9b9a94;user-select:none}"
+    },
+    {
+      "name": "Language Pill",
+      "kind": "nav",
+      "refersTo": "lang-pill",
+      "description": "Landing only. The single pill radius: switch to the other language.",
+      "html": "<a class=\"ds-lang\" href=\"#\" lang=\"fr\">FR</a>",
+      "css": ".ds-lang{display:inline-block;border:1px solid #8a8a8a;border-radius:999px;padding:4px 12px;font:600 .8125rem/1.6 'Plus Jakarta Sans',system-ui,sans-serif;color:#141414;text-decoration:none}.ds-lang:hover{text-decoration:underline}.ds-lang:focus-visible{outline:2px solid #141414;outline-offset:3px}"
+    },
+    {
+      "name": "Radio Dot Facts",
+      "kind": "custom",
+      "refersTo": "radio-dot",
+      "description": "Landing only. List markers drawn as checked radios, coral centre.",
+      "html": "<ul class=\"ds-facts\"><li><span class=\"ds-fdot\"></span>One executable</li><li><span class=\"ds-fdot\"></span>MIT licence</li></ul>",
+      "css": ".ds-facts{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,max-content);gap:10px 28px;font:600 .9375rem/1.6 'Plus Jakarta Sans',system-ui,sans-serif;color:#141414}.ds-facts li{display:flex;align-items:center;gap:8px}.ds-fdot{flex:none;width:14px;height:14px;border-radius:50%;border:2.66px solid #141414;background:radial-gradient(circle,#f04e37 0 2.38px,transparent 2.88px)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Borrowed Voice",
+    "overview": "\n**Creative North Star: \"The Borrowed Voice\"**\n\nquikform has no visual identity of its own to push. A form page is one white, left-aligned column of about 680 px, bold labels above outlined fields, generous air between questions, and a single brand accent supplied per project. Everything that is not the accent is neutral grey on white, so the page reads as part of whichever gym, barbershop or bakery sent the link. The pinned references are Tally for the page (column, bold labels, lettered choice chips, dark button with an arrow) and Typeform for the step mode (thin progress bar at the top, full-width thumb-reach button stuck to the bottom of the phone screen).\n\nThe page works without JavaScript; the script only adds step mode, live validation and a local draft, so the system is styled server-rendered first. It loads nothing external: the Content Security Policy is `default-src 'self'`, so the typeface (Plus Jakarta Sans) and the logo are served by quikform itself and the only icon is an inline SVG arrow. Motion is CSS only, short and small, and switched off under `prefers-reduced-motion`.\n\nRejected from the references: banner photos and gradients, \"Made with\" / \"Powered by\" badges, placeholder text as the only hint, underline-only fields, cookie banners.",
+    "keyCharacteristics": [
+      "One brand accent per project, every other color neutral.",
+      "Plus Jakarta Sans, self-hosted, with a system fallback; no external resources.",
+      "Labels always visible above their field, in bold.",
+      "Flat white surface; one soft shadow, on the phone's sticky action bar.",
+      "Touch targets of 44 px minimum (48 px for buttons and text inputs), WCAG 2.2 AA."
+    ],
+    "rules": [
+      {
+        "name": "The Borrowed Voice Rule",
+        "body": "The brand accent is the only color a project can change. It appears on the primary action, progress and selected state, nowhere else; no second brand color, no tinted backgrounds, no colored headings.",
+        "section": "colors"
+      },
+      {
+        "name": "The Computed Contrast Rule",
+        "body": "Colors derived from the accent are computed against WCAG thresholds, never chosen by eye. A project accent that fails a threshold falls back to black for that role rather than shipping low contrast.",
+        "section": "colors"
+      },
+      {
+        "name": "The Visible Label Rule",
+        "body": "Every field has a bold label above it, always visible. Placeholder text is an example, never the label.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "No small label above a title. The step counter lives in the button row, not above the step title.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Page Rule",
+        "body": "Fields, chips and buttons never cast shadows. State shows as a border change, never elevation.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Selected Dot Rule",
+        "body": "Coral appears only as the filled centre of a radio dot: the logo, the list markers of the hero facts and the \"why\" questions, and the checked tab. Never text, a fill, a border, a link or a background.",
+        "section": "colors",
+        "surface": "landing"
+      },
+      {
+        "name": "The White-Label Boundary Rule",
+        "body": "Brand Ink, Coral and the quikform logo stay on the landing. A form page takes the project's accent and nothing of quikform's.",
+        "section": "colors",
+        "surface": "landing"
+      },
+      {
+        "name": "The Code-Only Mono Rule",
+        "body": "The mono stack sets code, commands and field identifiers (the field lists under each use case). It never sets prose, headings, labels or buttons.",
+        "section": "typography",
+        "surface": "landing"
+      }
+    ],
+    "dos": [
+      "**Do** take the brand accent from the project and compute every derived color (`renderBrandCss`); keep the rest neutral.",
+      "**Do** keep every label visible above its field, bold, at the Title size.",
+      "**Do** keep every touch target at 44 px or more, buttons and text inputs at 48 px.",
+      "**Do** keep inputs at 16 px or more.",
+      "**Do** place the privacy note immediately before the action row.",
+      "**Do** keep the step counter in the button row.",
+      "**Do** keep motion in CSS, under 0.3 s, and removed under `prefers-reduced-motion`.",
+      "Landing: Do use Coral only inside a radio dot.",
+      "Landing: Do show real captures of quikform forms, framed as a phone, and name the sample brand in the caption.",
+      "Landing: Do group content with 1 px rules, not cards.",
+      "Landing: Do keep code on ink panels in the mono stack, and let it scroll sideways on phones.",
+      "Landing: Do keep buttons at 48 px and tabs at 44 px minimum height."
+    ],
+    "donts": [
+      "**Don't** load fonts, icon fonts, CDNs or any resource from another origin; the CSP is `default-src 'self'`. Fonts and the logo are served by quikform.",
+      "**Don't** add eyebrow labels above titles or step titles.",
+      "**Don't** use placeholder text as the only hint, or underline-only fields.",
+      "**Don't** add \"Powered by\" badges, banner photos, gradients or cookie banners.",
+      "**Don't** add shadows to fields, chips or buttons.",
+      "**Don't** let a project override the neutral greys or the error red.",
+      "Landing: Don't add eyebrow labels above titles.",
+      "Landing: Don't use Coral for text, links, fills or borders.",
+      "Landing: Don't use decorative gradients; the only gradients are the drawn dot centre and the phone code panels' scroll-edge cue.",
+      "Landing: Don't add shadows to buttons, tabs or panels.",
+      "Landing: Don't use JavaScript for motion; tabs and panels work with native radios and CSS.",
+      "Landing: Don't put the quikform logo, Coral or Brand Ink on a form page."
+    ],
+    "brandSurface": {
+      "surface": "landing page (site/)",
+      "northStar": "The Checked Radio",
+      "overview": "A white page set in ink, one coral dot that only ever means \"selected\", dark ink code panels beside real phone captures of the form. Content is grouped by thin rules, never by cards. The page shows the JSON an agent writes and the form it becomes, side by side."
+    }
+  }
+}

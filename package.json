@@ -1,0 +1,22 @@
+{
+  "name": "quikform",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test",
+    "build": "bun scripts/build.ts",
+    "build:client": "bun scripts/build-client.ts",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "hono": "4.13.13",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0",
+    "@types/bun": "1.4.3",
+    "typescript": "7.0.2"
+  }
+}

@@ -2,3 +2,7 @@ design/shots/
 node_modules/
 *.sqlite
 .env*
+dist/
+test-results/
+playwright-report/
+.impeccable/review/

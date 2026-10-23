@@ -67,8 +67,8 @@ tests/…                      un fichier de test par module
   - `type FormDefinition = { id: string; version: number; lang: "fr" | "en" | "de" | "th"; address: "formal" | "informal"; title: string; description?: string; privacy: string; submitLabel?: string; thankYou: { title: string; body: string }; access: "public"; notify: { telegram: boolean }; steps: { title?: string; fields: Field[] }[] }`
   - `parseDefinition(input: unknown): { ok: true; value: FormDefinition } | { ok: false; errors: string[] }`
 
-- [ ] **Step 1: Initialiser le projet** — `bun init` minimal, `package.json` avec `"name": "quikform"`, `"license": "MIT"`, dépendances `hono@4.13.13`, `zod@4.6.7`, script `"test": "bun test"`. `tsconfig.json` strict.
-- [ ] **Step 2: Écrire les tests qui échouent**
+- [x] **Step 1: Initialiser le projet** — `bun init` minimal, `package.json` avec `"name": "quikform"`, `"license": "MIT"`, dépendances `hono@4.13.13`, `zod@4.6.7`, script `"test": "bun test"`. `tsconfig.json` strict.
+- [x] **Step 2: Écrire les tests qui échouent**
 
 ```ts
 test("accepts a minimal one-step form", () => {
@@ -84,10 +84,10 @@ test("defaults: address formal, version 1", () => {});
 test("error messages carry the JSON path, e.g. steps.0.fields.2.options", () => {});
 ```
 
-- [ ] **Step 3: Lancer** `bun test tests/definition/schema.test.ts` — attendu : FAIL (`parseDefinition` absent).
-- [ ] **Step 4: Implémenter `parseDefinition`** avec `zod/mini` : objets stricts ; `id` de champ et de formulaire en `^[a-z][a-z0-9_-]{0,47}$` ; contrôles inter-champs (unicité, `showIf` vers un champ antérieur) dans un `refine` final ; erreurs à plat `"<chemin>: <message>"`.
-- [ ] **Step 5: Lancer les tests** — attendu : PASS.
-- [ ] **Step 6: Commit** `feat: form definition schema and parser`
+- [x] **Step 3: Lancer** `bun test tests/definition/schema.test.ts` — attendu : FAIL (`parseDefinition` absent).
+- [x] **Step 4: Implémenter `parseDefinition`** avec `zod/mini` : objets stricts ; `id` de champ et de formulaire en `^[a-z][a-z0-9_-]{0,47}$` ; contrôles inter-champs (unicité, `showIf` vers un champ antérieur) dans un `refine` final ; erreurs à plat `"<chemin>: <message>"`.
+- [x] **Step 5: Lancer les tests** — attendu : PASS.
+- [x] **Step 6: Commit** `feat: form definition schema and parser`
 
 ### Task 2: Schéma de réponse et textes d'interface
 
@@ -104,7 +104,7 @@ test("error messages carry the JSON path, e.g. steps.0.fields.2.options", () => 
   - `validateResponse(def: FormDefinition, raw: Record<string, unknown>, lang?: string): { ok: true; values: Values } | { ok: false; errors: Record<string, string> }` — `raw` est soit un objet issu de `FormData` (chaînes, tableaux pour les choix multiples), soit un objet du navigateur.
   - `t(lang: Lang, address: "formal" | "informal", key: StringKey, vars?: Record<string, string | number>): string` avec `StringKey` = `"required" | "invalidEmail" | "number" | "min" | "max" | "maxLength" | "chooseOne" | "next" | "back" | "submit" | "stepOf" | "errorSummary" | "draftRestored" | "yes" | "no" | "optional" | "sending" | "networkError"`.
 
-- [ ] **Step 1: Tests qui échouent**
+- [x] **Step 1: Tests qui échouent**
 
 ```ts
 test("required empty field -> errors.name === t('en','formal','required')", () => {});
@@ -119,10 +119,10 @@ test("fr formal: required -> 'Ce champ est requis.'; invalidEmail formal -> 'Vé
 test("every StringKey exists in fr, en, de, th", () => {});
 ```
 
-- [ ] **Step 2: Lancer** — FAIL.
-- [ ] **Step 3: Implémenter.** `validateResponse` construit un `z.object` à partir des seuls `visibleFields` ; messages via `t`. Les textes d'interface sont courts, sans point d'exclamation, sans formule creuse ; pour `th`, pas de forme formelle/informelle distincte.
-- [ ] **Step 4: Lancer** — PASS.
-- [ ] **Step 5: Commit** `feat: response validation and UI strings`
+- [x] **Step 2: Lancer** — FAIL.
+- [x] **Step 3: Implémenter.** `validateResponse` construit un `z.object` à partir des seuls `visibleFields` ; messages via `t`. Les textes d'interface sont courts, sans point d'exclamation, sans formule creuse ; pour `th`, pas de forme formelle/informelle distincte.
+- [x] **Step 4: Lancer** — PASS.
+- [x] **Step 5: Commit** `feat: response validation and UI strings`
 
 ### Task 3: Composants de champs et page (sans JavaScript)
 
@@ -142,7 +142,7 @@ Avant d'écrire le CSS : lire `~/.claude/plugins/cache/impeccable/impeccable/4.7
   - `renderThankYouPage(def: FormDefinition, brand: Brand): string`
   - `renderNotFoundPage(): string`
 
-- [ ] **Step 1: Tests qui échouent**
+- [x] **Step 1: Tests qui échouent**
 
 ```ts
 test("every field has a visible <label for=id> before its control", () => {});
@@ -158,10 +158,10 @@ test("brand.accent is applied as --qf-accent and only accepts #rgb/#rrggbb", () 
 test("errors -> summary at top with links to each field", () => {}); // Review Focus 3 (rendu)
 ```
 
-- [ ] **Step 2: Lancer** — FAIL.
-- [ ] **Step 3: Implémenter le rendu** : HTML sémantique, `<form method="post" novalidate>` ; police système ; colonne d'environ 680 px ; label en gras au-dessus du champ, aide sous le label ; pastilles de choix bordées avec lettre ; bouton d'envoi plein, couleur `--qf-accent`, pleine largeur et collé en bas sur téléphone (< 640 px) ; mention de confidentialité sous le bouton ; logo en tête s'il existe. Les couleurs dérivées de l'accent (survol, focus) vérifient un contraste AA, avec repli sur le noir quand l'accent est trop clair.
-- [ ] **Step 4: Lancer** — PASS.
-- [ ] **Step 5: Commit** `feat: field components and server-rendered page`
+- [x] **Step 2: Lancer** — FAIL.
+- [x] **Step 3: Implémenter le rendu** : HTML sémantique, `<form method="post" novalidate>` ; police système ; colonne d'environ 680 px ; label en gras au-dessus du champ, aide sous le label ; pastilles de choix bordées avec lettre ; bouton d'envoi plein, couleur `--qf-accent`, pleine largeur et collé en bas sur téléphone (< 640 px) ; mention de confidentialité sous le bouton ; logo en tête s'il existe. Les couleurs dérivées de l'accent (survol, focus) vérifient un contraste AA, avec repli sur le noir quand l'accent est trop clair.
+- [x] **Step 4: Lancer** — PASS.
+- [x] **Step 5: Commit** `feat: field components and server-rendered page`
 
 ### Task 4: Base SQLite par projet et registre des projets
 
@@ -179,7 +179,7 @@ test("errors -> summary at top with links to each field", () => {}); // Review F
 
 Disposition sur disque : `$QUIKFORM_HOME/projects/<slug>/project.json` (`domains`, `brand`, `retentionMonths`, `telegram.chatId`, `telegram.threadId`), `.env` (`TELEGRAM_BOT_TOKEN`), `forms/<id>.json`, `data.sqlite`.
 
-- [ ] **Step 1: Tests qui échouent**
+- [x] **Step 1: Tests qui échouent**
 
 ```ts
 test("same submissionId twice -> second insert returns inserted:false, one row", () => {}); // Review Focus 5
@@ -191,10 +191,10 @@ test("resolveProject matches host case-insensitively, ignores port", () => {});
 test("token is read from the project's .env, never from project.json", () => {});
 ```
 
-- [ ] **Step 2: Lancer** — FAIL.
-- [ ] **Step 3: Implémenter** avec `bun:sqlite` : tables `responses(id, submission_id UNIQUE, form_id, form_version, values_json, created_at)` et `telegram_outbox(id, response_id, attempts, next_at, sent_at)`.
-- [ ] **Step 4: Lancer** — PASS.
-- [ ] **Step 5: Commit** `feat: per-project sqlite store and project registry`
+- [x] **Step 2: Lancer** — FAIL.
+- [x] **Step 3: Implémenter** avec `bun:sqlite` : tables `responses(id, submission_id UNIQUE, form_id, form_version, values_json, created_at)` et `telegram_outbox(id, response_id, attempts, next_at, sent_at)`.
+- [x] **Step 4: Lancer** — PASS.
+- [x] **Step 5: Commit** `feat: per-project sqlite store and project registry`
 
 ### Task 5: Alerte Telegram avec file de renvoi
 
@@ -209,7 +209,7 @@ test("token is read from the project's .env, never from project.json", () => {})
   - `flushOutbox(project: Project, now: Date, send?: SendFn): Promise<{ sent: number; failed: number }>` avec `SendFn = (token: string, chatId: string, text: string, threadId?: number) => Promise<void>`
   - `startOutboxLoop(projects: Project[], intervalMs = 30_000): () => void`
 
-- [ ] **Step 1: Tests qui échouent**
+- [x] **Step 1: Tests qui échouent**
 
 ```ts
 test("formatAlert lists label: value in field order, multiple choices joined by ', '", () => {});
@@ -218,10 +218,10 @@ test("send ok -> markSent, not retried", () => {});
 test("project without telegram config -> nothing enqueued, no error", () => {});
 ```
 
-- [ ] **Step 2: Lancer** — FAIL.
-- [ ] **Step 3: Implémenter** avec `fetch` vers `https://api.telegram.org/bot<token>/sendMessage` (`message_thread_id` si `threadId`), sans mode de mise en forme.
-- [ ] **Step 4: Lancer** — PASS.
-- [ ] **Step 5: Commit** `feat: telegram alerts with retry outbox`
+- [x] **Step 2: Lancer** — FAIL.
+- [x] **Step 3: Implémenter** avec `fetch` vers `https://api.telegram.org/bot<token>/sendMessage` (`message_thread_id` si `threadId`), sans mode de mise en forme.
+- [x] **Step 4: Lancer** — PASS.
+- [x] **Step 5: Commit** `feat: telegram alerts with retry outbox`
 
 ### Task 6: Serveur Hono et anti-spam
 
@@ -235,7 +235,7 @@ test("project without telegram config -> nothing enqueued, no error", () => {});
 
 Routes : `GET /:form` (page), `POST /:form` (envoi), `GET /:form/thanks`, `GET /_qf/app.js`, `GET /_qf/app.css`. Hôte inconnu ou formulaire inconnu → 404 générique (`renderNotFoundPage`), sans nommer d'autre projet.
 
-- [ ] **Step 1: Tests qui échouent** (via `app.request`, en-tête `Host`)
+- [x] **Step 1: Tests qui échouent** (via `app.request`, en-tête `Host`)
 
 ```ts
 test("valid POST -> 303 to /<form>/thanks, one row, one outbox item", () => {});
@@ -247,10 +247,10 @@ test("unknown host and unknown form -> 404 without project names", () => {});
 test("responses carry Content-Security-Policy default-src 'self'; img-src 'self' https: data:", () => {});
 ```
 
-- [ ] **Step 2: Lancer** — FAIL.
-- [ ] **Step 3: Implémenter.** `_t` = horodatage signé HMAC-SHA256 avec `secret` ; `_sid` = `crypto.randomUUID()` au rendu ; IP lue dans `X-Forwarded-For` (Caddy) ; limite en mémoire. Après l'enregistrement, mise en file Telegram puis `flushOutbox` sans attendre la réponse.
-- [ ] **Step 4: Lancer** — PASS.
-- [ ] **Step 5: Commit** `feat: http server with spam protection`
+- [x] **Step 2: Lancer** — FAIL.
+- [x] **Step 3: Implémenter.** `_t` = horodatage signé HMAC-SHA256 avec `secret` ; `_sid` = `crypto.randomUUID()` au rendu ; IP lue dans `X-Forwarded-For` (Caddy) ; limite en mémoire. Après l'enregistrement, mise en file Telegram puis `flushOutbox` sans attendre la réponse.
+- [x] **Step 4: Lancer** — PASS.
+- [x] **Step 5: Commit** `feat: http server with spam protection`
 
 ### Task 7: Script client (amélioration progressive)
 
@@ -264,11 +264,11 @@ test("responses carry Content-Security-Policy default-src 'self'; img-src 'self'
 
 Comportement : une étape visible à la fois, barre de progression fine en haut et « Étape 2 sur 4 » ; « Suivant » valide l'étape en cours et place le focus sur la première erreur ; la validation au fil de la saisie s'active seulement après la première sortie d'un champ ; les champs `showIf` apparaissent et disparaissent sans saut de page ; Entrée passe au champ suivant (pas dans un texte long) ; touches A, B, C pour les choix quand le focus est dans le groupe ; brouillon dans `localStorage` (clé `qf:<host>:<form>:<version>`), restauré avec un message discret et effacé après envoi ; bouton désactivé pendant l'envoi ; `prefers-reduced-motion` respecté.
 
-- [ ] **Step 1: Tests qui échouent** (unitaires et e2e : remplir le formulaire d'exemple au clavier seul sur 390 px, recharger en cours de route → brouillon restauré, envoi → page de remerciement)
-- [ ] **Step 2: Lancer** — FAIL.
-- [ ] **Step 3: Implémenter.**
-- [ ] **Step 4: Lancer** `bun test tests/client` et `npx -y playwright@1.55.0 test` — PASS ; vérifier la taille gzip.
-- [ ] **Step 5: Commit** `feat: progressive enhancement client`
+- [x] **Step 1: Tests qui échouent** (unitaires et e2e : remplir le formulaire d'exemple au clavier seul sur 390 px, recharger en cours de route → brouillon restauré, envoi → page de remerciement)
+- [x] **Step 2: Lancer** — FAIL.
+- [x] **Step 3: Implémenter.**
+- [x] **Step 4: Lancer** `bun test tests/client` et `npx -y playwright@1.55.0 test` — PASS ; vérifier la taille gzip.
+- [x] **Step 5: Commit** `feat: progressive enhancement client`
 
 ### Task 8: CLI et exécutable unique
 
@@ -285,23 +285,23 @@ Comportement : une étape visible à la fois, barre de progression fine en haut 
   - `quikform responses --project <slug> [--form <id>] [--limit 50] [--json]`
   - `quikform project init <slug> --domain <d> [--accent #rrggbb] [--name <brand>]`
 
-- [ ] **Step 1: Tests qui échouent** (exécuter la CLI dans un `QUIKFORM_HOME` temporaire : codes de sortie, refus d'une définition invalide, `--json` lisible par `JSON.parse`, aucun accès hors du projet passé en `--project`)
-- [ ] **Step 2: Lancer** — FAIL.
-- [ ] **Step 3: Implémenter** ; `scripts/build.ts` fait le build client puis `bun build --compile src/cli/main.ts --outfile dist/quikform`.
-- [ ] **Step 4: Lancer** les tests, puis `bun run build && ./dist/quikform serve` dans un dossier d'exemple ; mesurer la RAM : `ps -o rss= -p <pid>` → moins de 100 000 Ko.
-- [ ] **Step 5: Reporter les commandes réelles dans `AGENTS.md`** (section Stack et commandes) et écrire un `README.md` court (installation, format, CLI).
-- [ ] **Step 6: Commit** `feat: cli and single binary build`
+- [x] **Step 1: Tests qui échouent** (exécuter la CLI dans un `QUIKFORM_HOME` temporaire : codes de sortie, refus d'une définition invalide, `--json` lisible par `JSON.parse`, aucun accès hors du projet passé en `--project`)
+- [x] **Step 2: Lancer** — FAIL.
+- [x] **Step 3: Implémenter** ; `scripts/build.ts` fait le build client puis `bun build --compile src/cli/main.ts --outfile dist/quikform`.
+- [x] **Step 4: Lancer** les tests, puis `bun run build && ./dist/quikform serve` dans un dossier d'exemple ; mesurer la RAM : `ps -o rss= -p <pid>` → moins de 100 000 Ko.
+- [x] **Step 5: Reporter les commandes réelles dans `AGENTS.md`** (section Stack et commandes) et écrire un `README.md` court (installation, format, CLI).
+- [x] **Step 6: Commit** `feat: cli and single binary build`
 
 ### Task 9: Finition visuelle contre les références
 
 **Files:**
 - Create: `examples/demo/project.json`, `examples/demo/forms/demo.json` (tous les types de champs, 3 étapes, un `showIf`), `design/shots/` (ignoré par git), `DESIGN.md`, `.impeccable/design.json`
 
-- [ ] **Step 1:** Servir l'exemple en local ; capturer la page à 1440 px et à 390 px, aux états : repos, focus, erreurs, étape 2, remerciement (`npx -y playwright@1.55.0 screenshot …` dans `design/shots/`).
-- [ ] **Step 2:** Comparer chaque capture aux lignes « ce qu'on prend » de `design/references/refs.md` ; lancer `"/home/hermes/.claude/plugins/cache/impeccable/impeccable/4.7.0/skills/impeccable/scripts/impeccable" detect --json src/render` ; corriger en un seul lot ; deuxième et dernière capture.
-- [ ] **Step 3:** Revue `review-ui` (utilisabilité, WCAG, finition) ; corriger les points de sévérité haute.
-- [ ] **Step 4:** Lancer l'agent `impeccable:impeccable-documenter` pour écrire `DESIGN.md` et `.impeccable/design.json` à partir du rendu construit.
-- [ ] **Step 5: Commit** `design: visual finish and DESIGN.md`
+- [x] **Step 1:** Servir l'exemple en local ; capturer la page à 1440 px et à 390 px, aux états : repos, focus, erreurs, étape 2, remerciement (`npx -y playwright@1.55.0 screenshot …` dans `design/shots/`).
+- [x] **Step 2:** Comparer chaque capture aux lignes « ce qu'on prend » de `design/references/refs.md` ; lancer `"/home/hermes/.claude/plugins/cache/impeccable/impeccable/4.7.0/skills/impeccable/scripts/impeccable" detect --json src/render` ; corriger en un seul lot ; deuxième et dernière capture.
+- [x] **Step 3:** Revue `review-ui` (utilisabilité, WCAG, finition) ; corriger les points de sévérité haute.
+- [x] **Step 4:** Lancer l'agent `impeccable:impeccable-documenter` pour écrire `DESIGN.md` et `.impeccable/design.json` à partir du rendu construit.
+- [x] **Step 5: Commit** `design: visual finish and DESIGN.md`
 
 ### Task 10: Questionnaire de Meaw et mise en ligne
 
@@ -310,10 +310,10 @@ Requiert l'accord de Jon à chaque étape marquée ⚑.
 **Files:**
 - Create: `deploy/quikform.service`, `deploy/Caddyfile.snippet`, définition `meaw-pricing.json` (dans `$QUIKFORM_HOME/projects/wildcat/forms/`, hors dépôt)
 
-- [ ] **Step 1:** Écrire `meaw-pricing.json` en anglais (`lang: "en"`) à partir des 17 questions envoyées à Meaw, en 4 étapes : Stay & Train (questions 1 à 5), Training only (6 à 9), DTV (10 à 14), Other (15 à 17). Chaque question de vérification est un `yes_no` (« Still correct? ») suivi d'un `long_text` « Correction » visible seulement si la réponse est non ; les questions ouvertes sont en `long_text` ou en `number`. `quikform check` → ok.
-- [ ] **Step 2:** Installer `$QUIKFORM_HOME` (`~/.local/share/quikform`), `quikform project init wildcat --domain formulaire.wildcatmuaythai.com --name "Wildcat Muay Thai"`, `.env` avec le jeton du bot et le `chatId` fournis par Jon ; service systemd utilisateur (`deploy/quikform.service`, `Restart=on-failure`, `MemoryMax=150M`).
-- [ ] **Step 3 ⚑:** Jon pose l'enregistrement DNS `formulaire.wildcatmuaythai.com` vers le serveur (A `187.77.71.11`, AAAA `2a02:4780:79:fe7e::1`).
-- [ ] **Step 4 ⚑:** Ajouter le bloc du domaine au Caddyfile (`reverse_proxy 127.0.0.1:8787`) ; `caddy validate`, puis rechargement. Si le rechargement demande `sudo`, Jon le lance depuis son terminal SSH.
-- [ ] **Step 5:** Vérifier : `curl -sI https://formulaire.wildcatmuaythai.com/meaw-pricing` → 200 ; un envoi de test → ligne en base (`quikform responses --project wildcat`) et alerte Telegram reçue ; supprimer la réponse de test.
+- [x] **Step 1:** Écrire `meaw-pricing.json` en anglais (`lang: "en"`) à partir des 17 questions envoyées à Meaw, en 4 étapes : Stay & Train (questions 1 à 5), Training only (6 à 9), DTV (10 à 14), Other (15 à 17). Chaque question de vérification est un `yes_no` (« Still correct? ») suivi d'un `long_text` « Correction » visible seulement si la réponse est non ; les questions ouvertes sont en `long_text` ou en `number`. `quikform check` → ok.
+- [x] **Step 2:** Installer `$QUIKFORM_HOME` (`~/.local/share/quikform`), `quikform project init wildcat --domain formulaire.wildcatmuaythai.com --name "Wildcat Muay Thai"`, `.env` avec le jeton du bot et le `chatId` fournis par Jon ; service systemd utilisateur (`deploy/quikform.service`, `Restart=on-failure`, `MemoryMax=150M`).
+- [x] **Step 3 ⚑:** Jon pose l'enregistrement DNS `formulaire.wildcatmuaythai.com` vers le serveur (A `187.77.71.11`, AAAA `2a02:4780:79:fe7e::1`).
+- [x] **Step 4 ⚑:** Ajouter le bloc du domaine au Caddyfile (`reverse_proxy 127.0.0.1:8787`) ; `caddy validate`, puis rechargement. Si le rechargement demande `sudo`, Jon le lance depuis son terminal SSH.
+- [x] **Step 5:** Vérifier : `curl -sI https://formulaire.wildcatmuaythai.com/meaw-pricing` → 200 ; un envoi de test → ligne en base (`quikform responses --project wildcat`) et alerte Telegram reçue ; supprimer la réponse de test.
 - [ ] **Step 6 ⚑:** Envoyer le lien à Meaw (Jon).
-- [ ] **Step 7:** Mettre à jour `docs/project/handoff.md` ; commit `chore: deploy files and step 1 handoff`.
+- [x] **Step 7:** Mettre à jour `docs/project/handoff.md` ; commit `chore: deploy files and step 1 handoff`.

@@ -1,0 +1,22 @@
+# systemd user unit: cp to ~/.config/systemd/user/, then systemctl --user enable --now quikform
+[Unit]
+Description=quikform forms server
+After=network.target
+
+[Service]
+ExecStart=%h/.local/bin/quikform serve --port 8787
+Environment=QUIKFORM_HOME=%h/.local/share/quikform
+# Holds QUIKFORM_SECRET=..., mode 600, outside git.
+EnvironmentFile=%h/.config/quikform/env
+Restart=on-failure
+MemoryMax=150M
+UMask=0077
+# Hardening that needs no mount namespace, so it works in a user unit.
+NoNewPrivileges=yes
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=default.target

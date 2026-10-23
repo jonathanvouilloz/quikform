@@ -1,0 +1,8 @@
+# Références : page de présentation (landing)
+
+source | ce qu'on prend | ce qu'on laisse
+---|---|---
+PocketBase (`pocketbase-desktop.png`, `pocketbase-mobile.png`, pocketbase.io) | Promesse en deux lignes très courtes au centre (« Open Source backend / in 1 file ») ; rangée de 4 fonctions cochées juste dessous ; une vraie capture du produit comme preuve ; bloc « fonctions à gauche, code à droite » ; boutons à bord noir et coins droits ; pied de page en 3 colonnes de liens | Fond bleu pastel et motif ; barre de recherche dans l'en-tête ; mascotte ; logos des frameworks
+htmx (`htmx-desktop.png`, `htmx-mobile.png`, htmx.org) | Une colonne de texte étroite d'environ 640 px, ton direct et un peu d'humour ; titres de section en minuscules et en gras ; liste « pourquoi » en questions ; un seul bloc de code « quick start » sombre ; le texte fait le travail, presque pas d'images | Bandeau de titre gris et motif topographique ; encadré NEWS avec ombre portée ; mur de logos des sponsors ; liens bleus partout
+ntfy (`ntfy-desktop.png`, `ntfy-mobile.png`, ntfy.sh) | Titre en gros caractères gras aligné à gauche, une phrase « ce que c'est » juste dessous ; une commande `curl` courte montrée dès le haut ; cas d'usage concrets (« quand ta sauvegarde finit… ») ; section « open source, rejoins-nous » | Grands aplats vert dégradé ; badges des magasins d'applications ; grille de tarifs ; mur de témoignages ; trop de sections
+Anti-référence : landing SaaS récente | — | Dégradés violets, cartes en verre flou, grille de 3 cartes à icônes identiques, chiffres héros inventés, « Trusted by » sans clients, animations au défilement

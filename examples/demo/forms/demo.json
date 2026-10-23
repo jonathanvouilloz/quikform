@@ -1,0 +1,61 @@
+{
+  "id": "demo",
+  "version": 1,
+  "lang": "fr",
+  "title": "Parlez-nous de votre projet",
+  "description": "Trois étapes, environ deux minutes.",
+  "privacy": "Vos réponses servent uniquement à vous recontacter et sont conservées 12 mois.",
+  "thankYou": { "title": "Merci", "body": "Nous revenons vers vous sous deux jours ouvrés." },
+  "access": "public",
+  "notify": { "telegram": false },
+  "steps": [
+    {
+      "title": "Vous",
+      "fields": [
+        { "id": "name", "type": "short_text", "label": "Votre nom", "required": true, "maxLength": 80 },
+        { "id": "email", "type": "email", "label": "Votre adresse email", "required": true, "placeholder": "nom@exemple.fr" }
+      ]
+    },
+    {
+      "title": "Votre projet",
+      "fields": [
+        {
+          "id": "kind",
+          "type": "single_choice",
+          "label": "Type de projet",
+          "required": true,
+          "options": [
+            { "value": "site", "label": "Site vitrine" },
+            { "value": "shop", "label": "Boutique en ligne" },
+            { "value": "app", "label": "Application" }
+          ]
+        },
+        { "id": "has_deadline", "type": "yes_no", "label": "Avez-vous une date limite ?", "required": true },
+        {
+          "id": "deadline",
+          "type": "short_text",
+          "label": "Pour quand ?",
+          "required": true,
+          "showIf": { "field": "has_deadline", "equals": true }
+        },
+        { "id": "budget", "type": "number", "label": "Budget en euros", "min": 0, "max": 100000 }
+      ]
+    },
+    {
+      "title": "Détails",
+      "fields": [
+        {
+          "id": "channels",
+          "type": "multiple_choice",
+          "label": "Comment nous avez-vous connus ?",
+          "options": [
+            { "value": "search", "label": "Recherche en ligne" },
+            { "value": "friend", "label": "Bouche-à-oreille" },
+            { "value": "social", "label": "Réseaux sociaux" }
+          ]
+        },
+        { "id": "details", "type": "long_text", "label": "Autre chose à ajouter ?", "maxLength": 2000 }
+      ]
+    }
+  ]
+}
