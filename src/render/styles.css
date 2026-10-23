@@ -116,10 +116,11 @@ body {
   font-size: 1.125rem;
   line-height: 1.35;
   font-weight: 700;
+  white-space: pre-line;
 }
 .qf-optional { font-weight: 400; color: var(--qf-muted); }
 
-.qf-help { margin: -0.25rem 0 0.625rem; color: var(--qf-muted); font-size: 0.9375rem; max-width: 65ch; text-wrap: pretty; }
+.qf-help { margin: -0.25rem 0 0.625rem; color: var(--qf-muted); font-size: 0.9375rem; max-width: 65ch; text-wrap: pretty; white-space: pre-line; }
 .qf-error { margin: 0 0 0.5rem; color: var(--qf-error); font-size: 0.9375rem; font-weight: 600; }
 
 .qf-field input[type="text"],

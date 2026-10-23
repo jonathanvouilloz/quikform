@@ -212,8 +212,8 @@ A step has `fields` (at least one) and an optional `title`.
 |---|---|---|
 | `id` | all | Same rules as a form id; unique in the form. It is the key of the answer in `values`. `website` and JavaScript object names such as `constructor` are reserved. |
 | `type` | all | One of the 7 types below. |
-| `label` | all | Always visible above the field. |
-| `help` | all | Help text under the label. |
+| `label` | all | Always visible above the field. A `\n` starts a new line (for a short list, one item per line). |
+| `help` | all | Help text under the label. `\n` works as in `label`. |
 | `placeholder` | text fields | Example shown inside an empty field. Never a replacement for the label. |
 | `required` | all | `true` to make the field mandatory. Default `false`; optional fields are marked "(optional)". |
 | `options` | choices | `[{ "value": "...", "label": "..." }]`, at least 2. `value` is what gets stored, `label` what people see. |
