@@ -19,7 +19,7 @@ function home(files: Record<string, unknown>): string {
 afterEach(() => {
   for (const d of dirs.splice(0)) fs.rmSync(d, { recursive: true, force: true });
 });
-const pj = { domains: ["Forms.Example.com"], brand: { name: "Meaw", accent: "#aa3300" } };
+const pj = { domains: ["Forms.Example.com"], brand: { name: "Example", accent: "#aa3300" } };
 
 test("an invalid form file is skipped, listed in loadErrors, other forms still load", () => {
   const h = home({
