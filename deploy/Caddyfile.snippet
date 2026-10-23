@@ -1,0 +1,6 @@
+# quikform site block, to add to /etc/caddy/Caddyfile.
+# The global `default_bind` of the server's Caddyfile already limits Caddy to the public IPs, so no bind line here.
+# quikform itself listens on 127.0.0.1:8787 and is never exposed directly.
+forms.example.com {
+	reverse_proxy 127.0.0.1:8787
+}

@@ -1,0 +1,10 @@
+{
+  "id": "contact",
+  "lang": "en",
+  "title": "Contact",
+  "privacy": "We keep your answers for 12 months.",
+  "thankYou": { "title": "Thanks", "body": "We received your message." },
+  "access": "public",
+  "notify": { "telegram": false },
+  "steps": [{ "fields": [{ "id": "name", "type": "short_text", "label": "Your name" }] }]
+}

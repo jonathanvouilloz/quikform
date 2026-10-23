@@ -1,0 +1,4 @@
+{
+  "domains": ["localhost"],
+  "brand": { "name": "Demo", "accent": "#1f5eff" }
+}

@@ -1,0 +1,255 @@
+/* quikform: one neutral column (Tally), thin progress bar and thumb-reach submit on phones (Typeform).
+   Brand colours come from /_qf/brand.css; the fallbacks below keep the page usable without it. */
+
+/* Plus Jakarta Sans variable, normal style, from @fontsource-variable/plus-jakarta-sans 5.3.0 (OFL, see fonts/OFL.txt).
+   No Thai glyphs: Thai text falls back to the system fonts. */
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url(/_qf/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url(/_qf/fonts/plus-jakarta-sans-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+:root {
+  color-scheme: light;
+  --qf-text: #1a1a1a;
+  --qf-muted: #595959; /* 7:1 on white */
+  --qf-line: #8a8a8a; /* 3.4:1 on white, input boundaries (WCAG 1.4.11) */
+  --qf-error: #b3261e; /* 6.5:1 on white */
+  --qf-error-tint: #fdf1f0;
+  --qf-radius: 8px;
+  --qf-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--qf-line) transparent; }
+
+body {
+  margin: 0;
+  background: #fff;
+  color: var(--qf-text);
+  font: 400 1rem/1.5 var(--qf-font);
+  caret-color: var(--qf-ink, #111);
+  accent-color: var(--qf-accent, #111);
+}
+
+::selection { background: var(--qf-tint, #e7e7e7); color: var(--qf-text); }
+
+.qf {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 4rem;
+}
+
+.qf-brand { margin-bottom: 2.5rem; }
+.qf-logo { display: block; max-height: 48px; max-width: 200px; width: auto; height: auto; }
+
+.qf-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.25rem);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.qf-description { margin: 0; color: var(--qf-muted); max-width: 65ch; text-wrap: pretty; }
+
+/* Progress: hidden until the script switches to step mode. */
+.qf-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  width: 100%;
+  height: 4px;
+  border: 0;
+  background: #ececec;
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--qf-accent, #111);
+}
+.qf-progress[hidden] { display: none; }
+.qf-progress::-webkit-progress-bar { background: #ececec; }
+.qf-progress::-webkit-progress-value { background: var(--qf-accent, #111); transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.qf-progress::-moz-progress-bar { background: var(--qf-accent, #111); }
+
+.qf-summary {
+  margin: 2rem 0 0;
+  padding: 1rem 1.25rem;
+  border: 2px solid var(--qf-error);
+  border-radius: var(--qf-radius);
+  background: var(--qf-error-tint);
+}
+.qf-summary:focus { outline: 2px solid var(--qf-focus, #111); outline-offset: 2px; }
+.qf-summary-title { margin: 0 0 0.5rem; font-size: 1rem; font-weight: 700; }
+.qf-summary ul { margin: 0; padding: 0; list-style: none; }
+.qf-summary li { padding: 0.25rem 0; }
+.qf-summary a { color: var(--qf-error); font-weight: 600; text-underline-offset: 0.2em; }
+.qf-summary-msg { display: block; color: var(--qf-text); }
+
+.qf-form { margin-top: 2.5rem; }
+
+/* Set by the script: one step at a time, hidden showIf fields, step counter and draft note. */
+.qf [hidden] { display: none !important; }
+.qf-step + .qf-step { margin-top: 3rem; }
+.qf-step[hidden] + .qf-step { margin-top: 0; }
+.qf-stepof { margin: 0 0 0 auto; color: var(--qf-muted); font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.qf-draft { margin: 0 0 1.25rem; color: var(--qf-muted); font-size: 0.875rem; }
+@keyframes qf-in { from { opacity: 0; transform: translateY(4px); } }
+.qf-in { animation: qf-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.qf-step-title { margin: 0 0 1.75rem; font-size: 1.25rem; line-height: 1.3; font-weight: 700; text-wrap: balance; }
+
+.qf-field { margin: 0 0 2.5rem; padding: 0; border: 0; min-width: 0; }
+
+.qf-label {
+  display: block;
+  padding: 0;
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 700;
+}
+.qf-optional { font-weight: 400; color: var(--qf-muted); }
+
+.qf-help { margin: -0.25rem 0 0.625rem; color: var(--qf-muted); font-size: 0.9375rem; max-width: 65ch; text-wrap: pretty; }
+.qf-error { margin: 0 0 0.5rem; color: var(--qf-error); font-size: 0.9375rem; font-weight: 600; }
+
+.qf-field input[type="text"],
+.qf-field input[type="email"],
+.qf-field textarea {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--qf-line);
+  border-radius: var(--qf-radius);
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-size: max(1rem, 16px); /* no zoom on iOS focus */
+}
+.qf-field textarea { min-height: 7.5rem; resize: vertical; }
+.qf-field input::placeholder, .qf-field textarea::placeholder { color: #707070; opacity: 1; } /* 4.9:1 */
+.qf-field input:hover, .qf-field textarea:hover { border-color: var(--qf-text); }
+.qf-field [aria-invalid="true"]:not([type="radio"], [type="checkbox"]) {
+  border-color: var(--qf-error);
+  box-shadow: inset 0 0 0 1px var(--qf-error);
+}
+
+:focus-visible { outline: 2px solid var(--qf-focus, #111); outline-offset: 2px; }
+.qf-field input:focus-visible, .qf-field textarea:focus-visible { border-color: var(--qf-focus, #111); }
+
+/* Choices: bordered chips with a letter key; the native input stays focusable but visually hidden. */
+.qf-options { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+.qf-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0.5rem 1rem 0.5rem 0.625rem;
+  border: 1px solid var(--qf-line);
+  border-radius: var(--qf-radius);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease-out, background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+.qf-option input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.qf-option:hover { border-color: var(--qf-text); }
+.qf-key {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--qf-line);
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--qf-text);
+  background: #fff;
+}
+.qf-option:has(input:checked) {
+  border-color: var(--qf-ink, #111);
+  box-shadow: inset 0 0 0 1px var(--qf-ink, #111);
+  background: var(--qf-tint, #f2f2f2);
+}
+.qf-option:has(input:checked) .qf-key {
+  border-color: var(--qf-accent, #111);
+  background: var(--qf-accent, #111);
+  color: var(--qf-on-accent, #fff);
+}
+.qf-option:has(input:focus-visible) { outline: 2px solid var(--qf-focus, #111); outline-offset: 2px; }
+.qf-option:has(input[aria-invalid="true"]) { border-color: var(--qf-error); }
+
+/* Honeypot: off-screen rather than display:none, which some bots skip. */
+.qf-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+
+.qf-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.qf-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border: 0;
+  border-radius: var(--qf-radius);
+  background: var(--qf-accent, #111);
+  color: var(--qf-on-accent, #fff);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease-out;
+}
+.qf-submit:hover { background: var(--qf-accent-hover, #333); }
+.qf-submit:disabled { cursor: progress; opacity: 0.7; }
+.qf-back {
+  min-height: 48px;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--qf-line);
+  border-radius: var(--qf-radius);
+  background: #fff;
+  color: var(--qf-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qf-back:hover { border-color: var(--qf-text); }
+.qf-arrow { flex: none; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.qf-submit:hover .qf-arrow { transform: translateX(2px); }
+
+.qf-privacy { margin: 0 0 1.25rem; color: var(--qf-muted); font-size: 0.875rem; max-width: 65ch; text-wrap: pretty; }
+
+@media (max-width: 639.98px) {
+  /* Keyboard focus never lands under the sticky bar (WCAG 2.4.11). */
+  html { scroll-padding-bottom: 7.5rem; }
+  /* Full-height column: on a short step the bar still rests on the bottom edge, within thumb reach. */
+  .qf { display: flex; flex-direction: column; min-height: 100svh; padding: 2.5rem 1.25rem 0; }
+  .qf-form { flex: 1; display: flex; flex-direction: column; }
+  .qf-options { align-items: stretch; }
+  .qf-actions {
+    position: sticky;
+    bottom: 0;
+    margin: auto -1.25rem 0;
+    padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom));
+    background: #fff;
+    box-shadow: 0 -6px 16px -8px rgb(0 0 0 / 0.18);
+  }
+  .qf-submit { flex: 1; }
+  .qf-actions .qf-stepof { flex-basis: 100%; margin: 0; text-align: center; font-size: 0.875rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

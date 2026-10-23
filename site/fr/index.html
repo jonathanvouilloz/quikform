@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>quikform : des formulaires écrits par votre agent IA, sur votre propre domaine</title>
+<meta name="description" content="Un petit serveur de formulaires open source. Votre agent écrit un fichier JSON, quikform le vérifie et sert un formulaire pour téléphone sur votre domaine. Réponses dans SQLite. Licence MIT.">
+<link rel="alternate" hreflang="en" href="../">
+<link rel="alternate" hreflang="fr" href="./">
+<link rel="icon" href="../favicon.ico" sizes="48x48">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preload" href="../fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../style.css">
+<meta property="og:title" content="quikform">
+<meta property="og:description" content="Votre agent écrit le formulaire. quikform l'affiche.">
+<meta name="theme-color" content="#141414">
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+
+<header class="wrap top">
+  <a class="brand" href="./"><img src="../logo.svg" alt="quikform" width="374" height="100"></a>
+  <nav aria-label="Principale">
+    <a href="#how">Fonctionnement</a>
+    <a href="#uses">Usages</a>
+    <a href="#install">Installation</a>
+    <a href="https://github.com/jonathanvouilloz/quikform">GitHub</a>
+    <a class="lang" href="../" hreflang="en" lang="en">EN</a>
+  </nav>
+</header>
+
+<main id="main">
+  <div class="wrap hero">
+    <div>
+      <h1>Votre agent écrit le formulaire. <span>quikform l’affiche.</span></h1>
+      <p class="lede">Un petit serveur de formulaires open source. Votre agent IA écrit un fichier JSON, quikform le vérifie et sert un formulaire pensé pour le téléphone sur votre propre domaine. Chaque réponse arrive dans un fichier SQLite que votre agent peut relire.</p>
+      <ul class="facts">
+        <li><span class="dot" aria-hidden="true"></span>Un seul exécutable</li>
+        <li><span class="dot" aria-hidden="true"></span>Moins de 100 Mo de RAM</li>
+        <li><span class="dot" aria-hidden="true"></span>Fonctionne sans JavaScript</li>
+        <li><span class="dot" aria-hidden="true"></span>Licence MIT</li>
+      </ul>
+<pre class="cmd" aria-label="Terminal"><code><span class="p">$ </span>quikform form put \
+    --project northwind accueil.json
+<span class="ok">ok accueil v1</span></code></pre>
+      <div class="actions">
+        <a class="btn btn-solid" href="https://github.com/jonathanvouilloz/quikform">
+          <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.71 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.83-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg>
+          Voir sur GitHub
+        </a>
+        <a class="btn btn-line" href="#install">L’installer
+          <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+      </div>
+    </div>
+    <figure class="shot">
+      <div class="phone"><img src="../img/form-step1-fr.png" width="780" height="1688" alt="Un formulaire d'accueil en deux étapes sur un téléphone : nom, email et une question à choix unique, avec un bouton Suivant vert et une barre de progression."></div>
+      <figcaption>Le formulaire que décrit <code>accueil.json</code>, tel que quikform l’affiche sur un téléphone. Northwind Climbing est une marque d’exemple.</figcaption>
+    </figure>
+  </div>
+
+  <section id="how" aria-labelledby="how-h">
+    <div class="wrap">
+      <h2 id="how-h">Comment ça marche</h2>
+      <p class="intro">Vous décrivez le formulaire en une phrase. Votre agent fait le reste avec quatre commandes.</p>
+      <div class="how">
+        <ol class="steps">
+          <li><h3>Votre agent écrit un fichier JSON</h3><p>Les champs, les étapes, les conditions, le message de remerciement et la mention de confidentialité. Aucun HTML ni script.</p></li>
+          <li><h3><code>quikform check</code> le relit</h3><p>Chaque erreur revient avec son emplacement exact dans le fichier : l’agent la corrige avant que quiconque voie le formulaire.</p></li>
+          <li><h3><code>form put</code> le publie</h3><p>Le formulaire est en ligne sur votre domaine en dix secondes. Sa version augmente à chaque changement de contenu.</p></li>
+          <li><h3>Les réponses reviennent</h3><p>Chaque réponse est validée une seconde fois sur le serveur, enregistrée dans SQLite et, si vous le voulez, envoyée dans un groupe Telegram. <code>quikform responses</code> les donne à votre agent en JSON.</p></li>
+        </ol>
+        <fieldset class="tabs">
+          <legend>Afficher une étape de l’exemple</legend>
+          <div class="tablist">
+            <input type="radio" name="t" id="t1" checked><label for="t1"><span class="dot" aria-hidden="true"></span>accueil.json</label>
+            <input type="radio" name="t" id="t2"><label for="t2"><span class="dot" aria-hidden="true"></span>Sur le téléphone</label>
+            <input type="radio" name="t" id="t3"><label for="t3"><span class="dot" aria-hidden="true"></span>La réponse</label>
+          </div>
+<pre class="code panel p1"><code>{
+  <span class="k">"id"</span>: <span class="s">"accueil"</span>,
+  <span class="k">"lang"</span>: <span class="s">"fr"</span>,
+  <span class="k">"title"</span>: <span class="s">"Bienvenue chez Northwind"</span>,
+  <span class="k">"privacy"</span>:
+    <span class="s">"Vos réponses servent uniquement à préparer vos séances."</span>,
+  <span class="k">"access"</span>: <span class="s">"public"</span>,
+  <span class="k">"notify"</span>: { <span class="k">"telegram"</span>: true },
+  <span class="k">"steps"</span>: [
+    { <span class="k">"title"</span>: <span class="s">"Vous"</span>, <span class="k">"fields"</span>: [
+      { <span class="k">"id"</span>: <span class="s">"name"</span>, <span class="k">"type"</span>: <span class="s">"short_text"</span>,
+        <span class="k">"label"</span>: <span class="s">"Votre nom"</span>, <span class="k">"required"</span>: true },
+      { <span class="k">"id"</span>: <span class="s">"email"</span>, <span class="k">"type"</span>: <span class="s">"email"</span>,
+        <span class="k">"label"</span>: <span class="s">"Email"</span>, <span class="k">"required"</span>: true },
+      { <span class="k">"id"</span>: <span class="s">"level"</span>, <span class="k">"type"</span>: <span class="s">"single_choice"</span>,
+        <span class="k">"label"</span>: <span class="s">"Avez-vous déjà grimpé ?"</span>,
+        <span class="k">"options"</span>: [ <span class="c">…</span> ] }
+    ] },
+    { <span class="k">"title"</span>: <span class="s">"Vos objectifs"</span>, <span class="k">"fields"</span>: [
+      { <span class="k">"id"</span>: <span class="s">"injury"</span>, <span class="k">"type"</span>: <span class="s">"yes_no"</span>,
+        <span class="k">"label"</span>: <span class="s">"Une blessure à nous signaler ?"</span> },
+      { <span class="k">"id"</span>: <span class="s">"injury_details"</span>, <span class="k">"type"</span>: <span class="s">"long_text"</span>,
+        <span class="k">"label"</span>: <span class="s">"Dites-nous en plus"</span>,
+        <span class="k">"showIf"</span>: { <span class="k">"field"</span>: <span class="s">"injury"</span>, <span class="k">"equals"</span>: true } }
+    ] }
+  ]
+}</code></pre>
+          <div class="panel p2">
+            <div class="panel-shot">
+              <img src="../img/form-step1-fr.png" width="780" height="1688" alt="Étape 1 sur 2 : nom, email et niveau d'escalade remplis." loading="lazy">
+              <img src="../img/form-step2-fr.png" width="780" height="1688" alt="Étape 2 sur 2 : oui à la question sur les blessures, ce qui fait apparaître le champ Dites-nous en plus." loading="lazy">
+            </div>
+          </div>
+<pre class="code panel p3"><code><span class="p">$ </span>quikform responses --project northwind --json
+[
+  {
+    <span class="k">"id"</span>: 2,
+    <span class="k">"created_at"</span>: <span class="s">"2026-10-23T09:21:53.139Z"</span>,
+    <span class="k">"form"</span>: <span class="s">"accueil"</span>,
+    <span class="k">"version"</span>: 1,
+    <span class="k">"values"</span>: {
+      <span class="k">"name"</span>: <span class="s">"Maya Okafor"</span>,
+      <span class="k">"email"</span>: <span class="s">"maya@example.com"</span>,
+      <span class="k">"level"</span>: <span class="s">"some"</span>,
+      <span class="k">"injury"</span>: true,
+      <span class="k">"injury_details"</span>: <span class="s">"Ancienne douleur à l'épaule, ça va mieux."</span>
+    }
+  }
+]</code></pre>
+        </fieldset>
+      </div>
+    </div>
+  </section>
+
+  <section id="uses" aria-labelledby="uses-h">
+    <div class="wrap">
+      <h2 id="uses-h">Ce qu’on en fait</h2>
+      <p class="intro">Tout ce que vous récupérez aujourd’hui par email ou WhatsApp, puis recopiez à la main.</p>
+      <ul class="cases">
+        <li>
+          <h3>L’accueil d’un client</h3>
+          <p>Les nouveaux membres ou clients répondent une fois, sur leur téléphone, avant le premier rendez-vous. Votre agent lit les réponses et prépare la séance.</p>
+          <span class="fields">short_text · email · single_choice · yes_no</span>
+        </li>
+        <li>
+          <h3>Un formulaire de contact pour un site statique</h3>
+          <p>Le bouton « Contact » de votre site pointe vers <code>formulaire.votresite.fr/contact</code>. Les messages arrivent sur votre Telegram et restent dans votre base.</p>
+          <span class="fields">email · long_text</span>
+        </li>
+        <li>
+          <h3>Un questionnaire pour un seul client</h3>
+          <p>Tarifs, services, horaires : tout ce qu’un agent doit savoir sur une entreprise, demandé par étapes au lieu d’un long échange d’emails. Le premier vrai formulaire de quikform, c’était exactement ça, pour une salle de sport.</p>
+          <span class="fields">number · multiple_choice · long_text</span>
+        </li>
+        <li>
+          <h3>Inscription à un cours ou un événement</h3>
+          <p>Un lien public à partager dans un groupe de discussion. Un champ piège invisible et une limite d’envois tiennent les robots à l’écart.</p>
+          <span class="fields">short_text · email · single_choice</span>
+        </li>
+        <li>
+          <h3>Un retour après une prestation</h3>
+          <p>Un court formulaire envoyé une fois le travail terminé. Les questions de suivi n’apparaissent que si une réponse les appelle.</p>
+          <span class="fields">yes_no · long_text · showIf</span>
+        </li>
+        <li>
+          <h3>Des demandes que votre agent traite</h3>
+          <p>Demandes de devis, réservations, dossiers d’inscription : les réponses arrivent en JSON structuré, prêtes pour l’agent qui s’en occupe.</p>
+          <span class="fields">responses --json</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="why" aria-labelledby="why-h">
+    <div class="wrap why">
+      <h2 id="why-h">Pourquoi si petit</h2>
+      <ul>
+        <li><span class="dot" aria-hidden="true"></span>Pourquoi un formulaire de contact demanderait-il un compte chez un autre service ?</li>
+        <li><span class="dot" aria-hidden="true"></span>Pourquoi votre agent cliquerait-il dans un éditeur visuel alors qu’il sait écrire un fichier ?</li>
+        <li><span class="dot" aria-hidden="true"></span>Pourquoi un serveur de formulaires aurait-il besoin de plusieurs gigaoctets de mémoire et de plusieurs bases ?</li>
+        <li><span class="dot" aria-hidden="true"></span>Pourquoi vos réponses vivraient-elles ailleurs qu’à côté de votre projet ?</li>
+      </ul>
+      <p>quikform garde un fichier JSON par formulaire et un fichier SQLite par projet, sur votre serveur, derrière le serveur web que vous avez déjà. Les composants de champs sont écrits une fois et testés : chaque formulaire que votre agent écrit hérite de la même validation et du même confort sur téléphone.</p>
+    </div>
+  </section>
+
+  <section id="inside" aria-labelledby="inside-h">
+    <div class="wrap">
+      <h2 id="inside-h">Ce qu’il y a dedans</h2>
+      <p class="intro">Ce qu’il faut à un formulaire pour être rempli sur un téléphone et vérifié sur le serveur.</p>
+      <div class="inside">
+        <dl>
+          <dt>Sept types de champs</dt>
+          <dd>Texte court, texte long, email, nombre, choix unique, choix multiple et oui ou non. Chacun peut être obligatoire, avoir des limites et un texte d’aide, ou n’apparaître que si une autre réponse l’appelle.</dd>
+          <dt>Vérifié deux fois</dt>
+          <dd><code>quikform check</code> valide la définition avant la mise en ligne, et le serveur valide de nouveau chaque envoi. Un champ obligatoire masqué par une condition ne bloque jamais l’envoi.</dd>
+          <dt>Pensé pour le téléphone</dt>
+          <dd>Un formulaire court tient sur une page ; un long se découpe en étapes avec une barre de progression. Les labels restent visibles, le clavier s’adapte au champ, le bouton est sous le pouce. Les réponses en cours restent dans le navigateur jusqu’à l’envoi.</dd>
+          <dt>Fonctionne sans JavaScript</dt>
+          <dd>La page est rendue sur le serveur. Le petit script ajoute seulement les étapes, la validation en direct et les champs conditionnels.</dd>
+          <dt>Votre marque, pas la nôtre</dt>
+          <dd>Logo et couleur d’accent par projet, et aucune mention « propulsé par ». Aucun traceur ni bannière de cookies.</dd>
+          <dt>Alertes et confidentialité</dt>
+          <dd>Un message Telegram à chaque réponse. Une mention de confidentialité sur chaque formulaire, et des réponses supprimées après 12 mois par défaut.</dd>
+          <dt>Quatre langues</dt>
+          <dd>Textes de l’interface en anglais, français, allemand et thaï, choisis par formulaire.</dd>
+        </dl>
+        <div class="sticky">
+<pre class="code"><code><span class="c"># un projet par domaine</span>
+<span class="p">$ </span>quikform project init northwind \
+    --domain formulaire.northwind.example \
+    --accent "#2b6a4f"
+
+<span class="c"># toute la boîte à outils de l'agent</span>
+<span class="p">$ </span>quikform check accueil.json
+<span class="p">$ </span>quikform form put --project northwind \
+    accueil.json
+<span class="p">$ </span>quikform responses --project northwind --json
+
+<span class="c"># le serveur, derrière Caddy ou un autre proxy</span>
+<span class="p">$ </span>quikform serve --port 8787</code></pre>
+          <p class="note">Chaque commande ne touche qu’un seul projet. Codes de sortie : 0 succès, 1 échec, 2 erreur d’utilisation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" aria-labelledby="install-h">
+    <div class="wrap install">
+      <div>
+        <h2 id="install-h" class="h2">Installation</h2>
+        <p>quikform se compile depuis les sources avec <a href="https://bun.sh">Bun</a> 1.4 ou plus récent. Le résultat est un seul fichier, <code>dist/quikform</code>, à copier sur votre serveur.</p>
+        <p>Il n’écoute que sur 127.0.0.1 : placez Caddy ou un autre proxy devant pour le HTTPS. Le README détaille le service systemd et le bloc Caddy.</p>
+      </div>
+<pre class="code"><code><span class="p">$ </span>git clone https://github.com/jonathanvouilloz/quikform
+<span class="p">$ </span>cd quikform
+<span class="p">$ </span>bun install
+<span class="p">$ </span>bun run build        <span class="c"># écrit dist/quikform</span>
+
+<span class="p">$ </span>export QUIKFORM_HOME=~/.local/share/quikform
+<span class="p">$ </span>export QUIKFORM_SECRET=$(openssl rand -hex 32)
+<span class="p">$ </span>./dist/quikform serve</code></pre>
+    </div>
+  </section>
+
+  <section class="close" aria-labelledby="close-h">
+    <div class="wrap">
+      <div class="box">
+        <div>
+          <h2 id="close-h" class="h2">Open source, licence MIT</h2>
+          <p>Le code, le format des formulaires et les tickets sont sur GitHub. Copiez-le, hébergez-le, proposez vos modifications.</p>
+        </div>
+        <a class="btn btn-solid" href="https://github.com/jonathanvouilloz/quikform">Voir sur GitHub
+          <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="legal">
+      <img src="../logo.svg" alt="quikform" width="374" height="100">
+      <p>Licence MIT. La police Plus Jakarta Sans est sous licence SIL Open Font License.</p>
+    </div>
+    <ul aria-label="Projet">
+      <li><a href="https://github.com/jonathanvouilloz/quikform">GitHub</a></li>
+      <li><a href="https://github.com/jonathanvouilloz/quikform#readme">README</a></li>
+      <li><a href="https://github.com/jonathanvouilloz/quikform/blob/main/LICENSE">Licence</a></li>
+    </ul>
+    <ul aria-label="Sur cette page">
+      <li><a href="#how">Fonctionnement</a></li>
+      <li><a href="#uses">Usages</a></li>
+      <li><a href="#install">Installation</a></li>
+      <li><a href="../" hreflang="en" lang="en">English version</a></li>
+    </ul>
+  </div>
+</footer>
+</body>
+</html>

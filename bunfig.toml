@@ -1,0 +1,4 @@
+[test]
+root = "./tests"
+# The server embeds dist/app.js; building it first keeps tests on the real bundle.
+preload = ["./scripts/build-client.ts"]
