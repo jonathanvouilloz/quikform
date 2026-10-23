@@ -115,7 +115,9 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
   });
 
   app.post("/:form", bodyLimit({ maxSize: 64 * 1024, onError: (c) => c.text("Payload Too Large", 413) }), async (c) => {
-    if (!project(c.req.header("host"))?.forms.has(c.req.param("form"))) return notFound(c);
+    // Token checked first, from the URL (the form posts to its own page): a private form must not answer 400 or 429 to strangers.
+    const r = lookup(c);
+    if (!r) return notFound(c);
     if (limited(clientIp(c))) return c.text("Too Many Requests", 429);
     let body: Record<string, unknown>;
     try {
@@ -128,8 +130,7 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
       const strings = [v].flat().filter((x): x is string => typeof x === "string"); // drops File values
       if (strings.length) raw[k] = Array.isArray(v) ? strings : strings[0]!;
     }
-    const r = lookup(c, typeof raw._k === "string" ? raw._k : "");
-    if (!r) return notFound(c);
+    if (r.token && raw._k !== r.token) return notFound(c);
     // Built on return only: c.redirect sets Location on the shared context.
     const thanks = () => c.redirect(`/${r.def.id}/thanks${r.token ? `?k=${encodeURIComponent(r.token)}` : ""}`, 303);
     if (raw[HONEYPOT] || !stampOk(raw._t)) return thanks();

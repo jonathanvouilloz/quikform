@@ -102,3 +102,11 @@ test("clearDrafts removes every version of one form's draft and nothing else", (
     false, false, true, true, true,
   ]);
 });
+
+test("private links of one form keep separate drafts, and the token is never stored in a draft", () => {
+  expect(draftKey("h", def, "tokA")).not.toBe(draftKey("h", def, "tokB"));
+  expect(draftKey("h", def, "tokA").startsWith(draftPrefix("h", def.id, "tokA"))).toBe(true);
+  expect(draftPrefix("h", def.id, "tokA").startsWith(draftPrefix("h", def.id))).toBe(true);
+  expect(draftKey("h", def)).toBe(`${draftPrefix("h", def.id)}${def.version}`);
+  expect(draftValues({ name: "Ana", _k: "tokA" })).toEqual({ name: "Ana" });
+});

@@ -17,14 +17,15 @@ export function toRaw(fd: FormData): Raw {
   return raw;
 }
 
-export const draftPrefix = (host: string, formId: string) => `qf:${host}:${formId}:`;
-export const draftKey = (host: string, def: FormDefinition) => draftPrefix(host, def.id) + def.version;
+// A private link's token is part of the key: two people's links on one browser never share a draft.
+export const draftPrefix = (host: string, formId: string, token?: string) => `qf:${host}:${formId}:${token ? `${token}:` : ""}`;
+export const draftKey = (host: string, def: FormDefinition, token?: string) => draftPrefix(host, def.id, token) + def.version;
 
 // Time still to wait so the answer reaches the server after MIN_AGE_MS; the page loads after the server stamped it.
 export const submitDelay = (loadedAt: number, now: number) => Math.max(0, MIN_AGE_MS - (now - loadedAt));
 
 export const draftValues = (raw: Raw): Raw =>
-  Object.fromEntries(Object.entries(raw).filter(([k]) => k !== HONEYPOT && k !== "_sid" && k !== "_t"));
+  Object.fromEntries(Object.entries(raw).filter(([k]) => k !== HONEYPOT && k !== "_sid" && k !== "_t" && k !== "_k"));
 
 export function stepErrors(def: FormDefinition, raw: Raw, step: number): Record<string, string> {
   const r = validateResponse(def, raw);
@@ -77,7 +78,7 @@ function init(form: HTMLFormElement, def: FormDefinition) {
   const actions = form.querySelector<HTMLElement>("[data-actions]")!;
   const submit = actions.querySelector<HTMLButtonElement>("button[type=submit]")!;
   const progress = document.querySelector<HTMLProgressElement>("[data-progress]");
-  const key = draftKey(location.host, def);
+  const key = draftKey(location.host, def, form.querySelector<HTMLInputElement>("input[name=_k]")?.value);
   const fieldEl = (id: string) => form.querySelector<HTMLElement>(`[data-field="${id}"]`)!;
   const controls = (root: ParentNode) => [...root.querySelectorAll<Control>("input, textarea")];
   const control = (el: Element) => el.querySelector<Control>("input:checked") ?? el.querySelector<Control>("input, textarea");
@@ -305,5 +306,5 @@ if (typeof document !== "undefined") {
   const def = document.getElementById("qf-def")?.textContent;
   if (form && def) init(form, JSON.parse(def));
   const thanks = document.querySelector<HTMLElement>("[data-qf-thanks]");
-  if (thanks) clearDrafts(draftPrefix(location.host, thanks.dataset.qfThanks!));
+  if (thanks) clearDrafts(draftPrefix(location.host, thanks.dataset.qfThanks!, new URLSearchParams(location.search).get("k") ?? undefined));
 }

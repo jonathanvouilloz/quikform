@@ -38,10 +38,10 @@ function setup() {
   return { project, app, clock };
 }
 const sign = (ms: number, secret = SECRET) => `${ms}.${createHmac("sha256", secret).update(String(ms)).digest("hex")}`;
-const post = (app: ReturnType<typeof setup>["app"], fields: Record<string, string | string[]>, { host = "forms.acme.test", ip = "1.1.1.1" } = {}) => {
+const post = (app: ReturnType<typeof setup>["app"], fields: Record<string, string | string[]>, { host = "forms.acme.test", ip = "1.1.1.1", query = "" } = {}) => {
   const body = new URLSearchParams();
   for (const [k, v] of Object.entries(fields)) for (const x of [v].flat()) body.append(k, x);
-  return app.request(`/${def.id}`, { method: "POST", body, headers: { host, "x-forwarded-for": `9.9.9.9, ${ip}` } });
+  return app.request(`/${def.id}${query}`, { method: "POST", body, headers: { host, "x-forwarded-for": `9.9.9.9, ${ip}` } });
 };
 const good = (over: Record<string, string | string[]> = {}) => ({ _sid: crypto.randomUUID(), _t: sign(T0), name: "Ana", contacted: "yes", tags: ["a", "b"], ...over });
 const count = (p: Project) => p.db.listResponses({}).length;
@@ -254,10 +254,11 @@ test("private form: POST needs _k, 422 keeps it, success stores the link label",
   const { app, project, token } = privateSetup();
   expect((await post(app, good())).status).toBe(404);
   expect(count(project)).toBe(0);
-  const bad = await post(app, good({ _k: token, name: "" }));
+  expect((await post(app, good({ _k: token }))).status).toBe(404); // token only in the body: the page URL always carries it
+  const bad = await post(app, good({ _k: token, name: "" }), { query: `?k=${token}` });
   expect(bad.status).toBe(422);
   expect(await bad.text()).toContain(`name="_k" value="${token}"`);
-  const res = await post(app, good({ _k: token }));
+  const res = await post(app, good({ _k: token }), { query: `?k=${token}` });
   expect([res.status, res.headers.get("location")]).toEqual([303, `/${def.id}/thanks?k=${token}`]);
   expect(project.db.listResponses({})[0]!.link).toBe("Olivier");
 });
@@ -268,4 +269,13 @@ test("public form ignores k and stores no link", async () => {
   expect((await get(app, `/${def.id}?k=${token}`)).status).toBe(200);
   await post(app, good({ _k: token }));
   expect(project.db.listResponses({})[0]!.link).toBeUndefined();
+});
+
+test("private form without a token: a broken body or the 11th POST is still the plain 404, never 400 or 429", async () => {
+  const { app } = privateSetup();
+  const broken = await app.request(`/${def.id}`, {
+    method: "POST", body: "--x\r\nbad", headers: { host: "forms.acme.test", "content-type": "multipart/form-data; boundary=x" },
+  });
+  expect(broken.status).toBe(404);
+  for (let i = 0; i < 11; i++) expect((await post(app, good())).status).toBe(404);
 });
