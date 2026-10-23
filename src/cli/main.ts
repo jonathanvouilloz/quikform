@@ -9,7 +9,7 @@ import { createApp } from "../server/app";
 import { cutoff, openProjectDb } from "../store/db";
 
 const USAGE = `usage:
-  quikform serve [--port 8787]
+  quikform serve [--port 8787] [--host 127.0.0.1]
   quikform check <file.json>
   quikform form put --project <slug> <file.json>
   quikform responses --project <slug> [--form <id>] [--limit 50] [--json]
@@ -217,9 +217,11 @@ const guarded = (name: string, fn: () => void) => () => {
 };
 
 function serve(args: string[]) {
-  const { values } = parseArgs({ args, options: { port: { type: "string", default: "8787" } } });
+  const { values } = parseArgs({ args, options: { port: { type: "string", default: "8787" }, host: { type: "string", default: "127.0.0.1" } } });
   const port = Number(values.port);
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Fail("--port must be 0-65535", 2);
+  // 127.0.0.1 unless told otherwise: in a container, 0.0.0.0 with the port published on the host's loopback only.
+  if (!/^[0-9a-f:.]+$/i.test(values.host) && !HOSTNAME.test(values.host)) throw new Fail("--host must be an IP address or hostname", 2);
   const h = home();
   const secret = process.env.QUIKFORM_SECRET ?? "";
   if (secret.length < 32) throw new Fail("QUIKFORM_SECRET must be set to at least 32 characters");
@@ -236,8 +238,8 @@ function serve(args: string[]) {
   const purgeAll = guarded("purge", () => purge(projects));
   reload();
   purgeAll();
-  const server = Bun.serve({ hostname: "127.0.0.1", port, fetch: createApp({ projects, secret, baseDomain }).fetch });
-  console.log(`listening on 127.0.0.1:${server.port}`);
+  const server = Bun.serve({ hostname: values.host, port, fetch: createApp({ projects, secret, baseDomain }).fetch });
+  console.log(`listening on ${values.host}:${server.port}`);
   // Load errors were already logged by syncProjects.
   for (const p of projects) console.log(`project ${p.slug}: ${p.forms.size} forms`);
 

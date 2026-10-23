@@ -168,7 +168,26 @@ test("serve refuses a missing or short secret without echoing it", () => {
   const r = qf(home, ["serve"], { QUIKFORM_SECRET: "short-secret" });
   expect(r.code).toBe(1);
   expect(r.err + r.out).not.toContain("short-secret");
-  expect(qf("", ["serve"], { QUIKFORM_HOME: "", QUIKFORM_SECRET: "x".repeat(40) }).code).toBe(1);
+  // Without QUIKFORM_HOME the default home is used; a short secret is still refused before anything listens.
+  expect(qf("", ["serve"], { QUIKFORM_HOME: "", XDG_DATA_HOME: tmp(), QUIKFORM_SECRET: "x" }).code).toBe(1);
+});
+
+test("serve --host sets the listening address (127.0.0.1 by default); a bad host is a usage error", async () => {
+  const home = setup();
+  const start = async (extra: string[]) => {
+    const proc = Bun.spawn(["bun", path.join(root, "src/cli/main.ts"), "serve", "--port", "0", ...extra], {
+      env: { PATH: process.env.PATH!, QUIKFORM_HOME: home, QUIKFORM_SECRET: "s".repeat(40) }, stdout: "pipe", stderr: "pipe",
+    });
+    try {
+      return await untilListening(proc);
+    } finally {
+      proc.kill();
+      await proc.exited;
+    }
+  };
+  expect(await start([])).toContain("listening on 127.0.0.1:");
+  expect(await start(["--host", "0.0.0.0"])).toContain("listening on 0.0.0.0:");
+  expect(qf(home, ["serve", "--host", "not a host"], { QUIKFORM_SECRET: "s".repeat(40) }).code).toBe(2);
 });
 
 test("compiled binary serves /_qf/app.js and a font with their bytes, and exits 0 on SIGTERM", async () => {

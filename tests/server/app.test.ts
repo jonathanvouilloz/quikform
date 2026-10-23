@@ -213,15 +213,15 @@ test("body over 64 KB -> 413, nothing stored", async () => {
 test("/_qf/tls says 200 only for a host that resolves to a project", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "qf-tls-"));
   dirs.push(dir);
-  const acgb: Project = { slug: "acgb", dir, domains: [], brand: { name: "A", accent: "#000" }, retentionMonths: 12,
+  const club: Project = { slug: "club", dir, domains: [], brand: { name: "A", accent: "#000" }, retentionMonths: 12,
     forms: new Map(), db: openProjectDb(path.join(dir, "data.sqlite")), loadErrors: [] };
   const { project } = setup();
-  const app = createApp({ projects: [project, acgb], secret: SECRET, baseDomain: "forms.jonlabs.ch" });
+  const app = createApp({ projects: [project, club], secret: SECRET, baseDomain: "forms.example.org" });
   const tls = async (q: string) => (await app.request(`/_qf/tls${q}`)).status;
-  expect(await tls("?domain=acgb.forms.jonlabs.ch")).toBe(200);
+  expect(await tls("?domain=club.forms.example.org")).toBe(200);
   expect(await tls("?domain=forms.acme.test")).toBe(200);
-  expect(await tls("?domain=inconnu.forms.jonlabs.ch")).toBe(404);
-  expect(await tls("?domain=forms.jonlabs.ch")).toBe(404);
+  expect(await tls("?domain=inconnu.forms.example.org")).toBe(404);
+  expect(await tls("?domain=forms.example.org")).toBe(404);
   expect(await tls("")).toBe(404);
 });
 

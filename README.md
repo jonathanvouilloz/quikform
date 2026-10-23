@@ -62,7 +62,6 @@ The real risk sits with **the AI agent that reads the answers**. Someone could t
 - One brand per project: name, accent colour, optional logo. No "powered by" mention, no tracker, no cookie banner.
 - Spam protection on public forms: a hidden trap field, a minimum of 3 seconds between page load and sending, at most 10 submissions per IP every 10 minutes.
 - Answers deleted automatically after 12 months by default.
-
 - Public forms (anyone with the URL) or private forms (one link per person, revocable; each answer records which link was used).
 - One shared base domain for all projects (`<project>.forms.example.com`) or a domain per project.
 
@@ -70,7 +69,7 @@ Not in v1: file uploads, payments, sending emails, a visual editor, statistics. 
 
 ## Requirements
 
-- [Bun](https://bun.sh) 1.4 or later, only to build the executable. The built file runs on its own.
+- Either [Docker](https://docs.docker.com/engine/install/) with Compose, or [Bun](https://bun.sh) 1.4 or later to build the executable (the built file then runs on its own, without Bun).
 - For production: a Linux server, a domain or subdomain whose DNS points to it, and a reverse proxy that handles HTTPS (the examples use [Caddy](https://caddyserver.com)).
 
 ## Try it on your machine (5 minutes)
@@ -97,6 +96,21 @@ Open http://localhost:8787/demo, fill in the form and send it. Then, in another 
 ```
 
 The domain `localhost` works because quikform finds the project from the `Host` header of each request, without the port.
+
+## Try it with Docker
+
+```sh
+git clone https://github.com/jonathanvouilloz/quikform
+cd quikform
+echo "QUIKFORM_SECRET=$(openssl rand -hex 32)" > .env
+docker compose up -d --build
+
+docker compose exec quikform quikform project init demo --domain localhost --name "Demo"
+docker compose cp examples/demo/forms/demo.json quikform:/data/demo.json
+docker compose exec quikform quikform form put --project demo /data/demo.json
+```
+
+Open http://localhost:8787/demo. Every command of the "Command line" section works the same way, prefixed with `docker compose exec quikform`. A form file must be inside the container first: copy it with `docker compose cp <file> quikform:/data/<file>`. Projects and answers live in the `quikform-data` volume, so they survive `docker compose down` and image rebuilds.
 
 ## Files and folders
 
@@ -130,7 +144,7 @@ Created by `quikform project init`. You can edit it by hand; `serve` reloads it 
 
 | Key | Required | Meaning |
 |---|---|---|
-| `domains` | yes | Host names that serve this project's forms, without `https://` or a path. At least one. |
+| `domains` | no | Host names that serve this project's forms, without `https://` or a path. May stay empty when `baseDomain` is set (see "One base domain for every project"). |
 | `brand.name` | yes | The project's name; used as the logo's text alternative. |
 | `brand.accent` | yes | Hex colour for the main button, the progress bar and selected choices. Hover, focus and text colours are computed from it to stay readable. |
 | `brand.logo` | no | File name of an image in the project folder (`.png`, `.jpg`, `.jpeg`, `.webp` or `.svg`, at most 200 KB, no folder). Copy the file first, then set the key. Shown above the form title. |
@@ -231,7 +245,8 @@ A step has `fields` (at least one) and an optional `title`.
 quikform check contact.json
 # ok contact v1
 # or one line per error, for example:
-# steps.0.fields.1.label: Invalid input
+# thankYou: required (expected object)
+# steps.0.fields.1.options.0: expected object, got string
 # steps.0.fields.2.showIf: showIf refers to "topic", which is not an earlier field
 ```
 
@@ -250,7 +265,7 @@ Every command reads `QUIKFORM_HOME` (default `~/.local/share/quikform`, or `$XDG
 | `quikform link list --project <slug> [--form <id>] [--json]` | Lists the links with their label, state and URL. |
 | `quikform link revoke --project <slug> <token>` | Closes a link; the form then answers "not found" to it. |
 | `quikform responses --project <slug> [--form <id>] [--limit 50] [--json]` | Lists the latest answers, newest first. Without `--json`: one tab-separated line per answer (`id`, date, form, values, link label). |
-| `quikform serve [--port 8787]` | Starts the server on 127.0.0.1. Needs `QUIKFORM_SECRET` (32 characters or more). |
+| `quikform serve [--port 8787] [--host 127.0.0.1]` | Starts the server. Needs `QUIKFORM_SECRET` (32 characters or more). Keep the default host unless it runs in a container (the Docker image uses `0.0.0.0` and Compose publishes the port on the host's `127.0.0.1` only). |
 | `quikform --help` | Prints the usage. |
 
 Exit codes: 0 success, 1 failure, 2 usage error (unknown command, bad option).
@@ -325,6 +340,27 @@ An alert contains the form title and one line per answered field (`Label : answe
 
 ## Deploy on your server
 
+Two ways, same result: Docker Compose, or the executable with a systemd service. In both, Caddy (or another reverse proxy) handles HTTPS in front, and quikform is only reachable on the server's `127.0.0.1:8787`.
+
+### With Docker Compose
+
+1. **DNS** and **Caddy**: as in steps 1 and 6 below, or once for every project with "One base domain for every project".
+2. On the server:
+   ```sh
+   git clone https://github.com/jonathanvouilloz/quikform && cd quikform
+   echo "QUIKFORM_SECRET=$(openssl rand -hex 32)" > .env && chmod 600 .env
+   docker compose up -d --build
+   docker compose exec quikform quikform project init gym --domain forms.example.com --name "Example Gym"
+   ```
+3. For a shared base domain, write the settings file into the volume and restart:
+   ```sh
+   echo '{ "baseDomain": "forms.example.com" }' > quikform.json
+   docker compose cp quikform.json quikform:/data/quikform.json && docker compose restart
+   ```
+4. Logs: `docker compose logs -f`. Update: `git pull && docker compose up -d --build`. Backup: `docker compose cp quikform:/data ./backup`.
+
+### With the executable and systemd
+
 These steps run as an ordinary user with a systemd user unit (no root for quikform itself). Root, or sudo, is only needed for Caddy.
 
 1. **DNS**: create an `A` (and `AAAA` if you have IPv6) record for your form domain, for example `forms.example.com`, pointing to the server.
@@ -371,7 +407,13 @@ Several clients on one server: create one project per client, each with its own 
 
 ## Using it with your AI agent
 
-The repository ships an agent skill, `skills/quikform/SKILL.md`: it tells an agent when to use quikform and walks it through writing, checking, publishing, private links and reading answers. Copy or link the folder into your agent's skills folder (for Claude Code: `~/.claude/skills/quikform`).
+quikform is built to be driven by an agent: you say "make me a sign-up form for the June camp, private links for the three coaches", the agent writes the JSON, checks it, publishes it and gives you the links.
+
+The repository ships an agent skill, `skills/quikform/SKILL.md`. It tells the agent when to use quikform and walks it through writing (with a complete example), checking, publishing, private links and reading answers. Install it once on the machine where your agent runs:
+
+- **Claude Code**: `ln -s "$PWD/skills/quikform" ~/.claude/skills/quikform` from the cloned repository (or copy the folder). The agent then picks quikform whenever you ask for a form.
+- **Other agents** (Codex, Cursor, Hermes…): point their instructions file (`AGENTS.md` or equivalent) at `skills/quikform/SKILL.md`, or paste its content.
+- **Docker**: the agent runs the same commands prefixed with `docker compose exec quikform`, and copies each form file in with `docker compose cp` first.
 
 Without the skill, give your agent shell access on the server (or wherever `QUIKFORM_HOME` lives) and tell it the rules, for example in its instructions file:
 

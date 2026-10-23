@@ -1,0 +1,12 @@
+node_modules
+dist
+docs
+design
+site
+e2e
+tests
+test-results
+playwright-report
+.git
+.env*
+*.sqlite
