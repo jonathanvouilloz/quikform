@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     environment:
       QUIKFORM_SECRET: ${QUIKFORM_SECRET:?set QUIKFORM_SECRET (32+ characters) in .env}
+      QUIKFORM_ADMIN_PASSWORD_HASH: ${QUIKFORM_ADMIN_PASSWORD_HASH:-} # optional, see "Admin" in the README
+      TZ: ${TZ:-UTC}
     ports:
       - "127.0.0.1:8787:8787" # only your reverse proxy on the same machine reaches it
     volumes:
