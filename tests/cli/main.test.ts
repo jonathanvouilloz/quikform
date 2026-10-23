@@ -274,3 +274,15 @@ test("purge: a failing project is logged and the others are still purged", async
     proc.kill();
   }
 });
+
+test("admin hash-password hashes stdin with argon2id; empty input is a usage error", async () => {
+  const run = (input: string) => {
+    const r = Bun.spawnSync(["bun", path.join(root, "src/cli/main.ts"), "admin", "hash-password"], { stdin: Buffer.from(input), env: { PATH: process.env.PATH! } });
+    return { code: r.exitCode, out: r.stdout.toString().trim() };
+  };
+  const ok = run("correct horse\n");
+  expect(ok.code).toBe(0);
+  expect(ok.out).toStartWith("$argon2id$");
+  expect(await Bun.password.verify("correct horse", ok.out)).toBe(true);
+  expect(run("\n").code).toBe(2);
+});

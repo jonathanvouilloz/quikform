@@ -34,8 +34,8 @@ const ProjectConfig = z.strictObject({
   telegram: z.optional(z.strictObject({ chatId: z.string(), threadId: z.optional(z.int()) })),
 });
 
-export type Settings = { baseDomain?: string };
-const SettingsFile = z.strictObject({ baseDomain: z.optional(Hostname) });
+export type Settings = { baseDomain?: string; adminHost?: string; adminLang?: "en" | "fr" };
+const SettingsFile = z.strictObject({ baseDomain: z.optional(Hostname), adminHost: z.optional(Hostname), adminLang: z.optional(z.enum(["en", "fr"])) });
 
 // Server-wide settings in $QUIKFORM_HOME/quikform.json; a missing file means none. Throws on an invalid file.
 export function readSettings(home: string): Settings {
@@ -43,7 +43,12 @@ export function readSettings(home: string): Settings {
   if (!fs.existsSync(file)) return {};
   const parsed = z.safeParse(SettingsFile, JSON.parse(fs.readFileSync(file, "utf8")));
   if (!parsed.success) throw new Error(`quikform.json: ${parsed.error.issues.map(formatIssue).join("; ")}`);
-  return parsed.data.baseDomain ? { baseDomain: parsed.data.baseDomain.toLowerCase() } : {};
+  const { baseDomain, adminHost, adminLang } = parsed.data;
+  return {
+    ...(baseDomain && { baseDomain: baseDomain.toLowerCase() }),
+    ...(adminHost && { adminHost: adminHost.toLowerCase() }),
+    ...(adminLang && { adminLang }),
+  };
 }
 
 // Bun only auto-loads .env from the cwd, so read the project's own file.

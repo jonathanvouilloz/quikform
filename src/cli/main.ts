@@ -16,6 +16,7 @@ const USAGE = `usage:
   quikform link create --project <slug> --form <id> --label <text>
   quikform link list --project <slug> [--form <id>] [--json]
   quikform link revoke --project <slug> <token>
+  quikform admin hash-password   (reads the password on stdin, prints QUIKFORM_ADMIN_PASSWORD_HASH)
   quikform project init <slug> [--domain <host>] [--accent #rrggbb] [--name <brand>]
 environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters)
 settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com"}`;
@@ -174,6 +175,12 @@ function linkRevoke(args: string[]) {
   console.log("revoked");
 }
 
+async function adminHashPassword() {
+  const password = (await Bun.stdin.text()).replace(/\r?\n$/, "");
+  if (!password) throw new Fail("type the password on stdin, e.g. read -rs P && printf %s \"$P\" | quikform admin hash-password", 2);
+  console.log(await Bun.password.hash(password, { algorithm: "argon2id" }));
+}
+
 function projectInit(args: string[]) {
   const { values, positionals } = parseArgs({
     args,
@@ -254,9 +261,9 @@ function serve(args: string[]) {
   };
 }
 
-const commands: Record<string, (args: string[]) => void> = {
+const commands: Record<string, (args: string[]) => void | Promise<void>> = {
   serve, check, "form put": formPut, responses, "project init": projectInit,
-  "link create": linkCreate, "link list": linkList, "link revoke": linkRevoke,
+  "link create": linkCreate, "link list": linkList, "link revoke": linkRevoke, "admin hash-password": adminHashPassword,
 };
 
 try {
@@ -266,7 +273,7 @@ try {
     const two = `${argv[0]} ${argv[1]}`;
     const key = Object.hasOwn(commands, two) ? two : argv[0] ?? "";
     if (!Object.hasOwn(commands, key)) throw new Fail("unknown command", 2);
-    commands[key]!(argv.slice(key.split(" ").length));
+    await commands[key]!(argv.slice(key.split(" ").length));
   }
 } catch (e) {
   const code = e instanceof Fail ? e.code : (e as { code?: string }).code?.startsWith("ERR_PARSE_ARGS") ? 2 : 1;
