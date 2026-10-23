@@ -1,6 +1,6 @@
 ---
 name: quikform
-description: Neutral, white-label form pages that take on each project's accent and nothing else.
+description: Neutral, white-label form pages that take on each project's accent and nothing else; one brand surface (the landing page) in quikform's own ink and coral.
 colors:
   accent-fallback: "#111111"
   accent-hover-fallback: "#333333"
@@ -13,6 +13,17 @@ colors:
   surface: "#ffffff"
   error: "#b3261e"
   error-tint: "#fdf1f0"
+  # Brand surface (landing page) only; never on form pages.
+  brand-ink: "#141414"
+  brand-ink-hover: "#333333"
+  coral: "#f04e37"
+  rule-soft: "#d9d9d6"
+  wash: "#f6f6f4"
+  selection-wash: "#e3e3df"
+  code-ink: "#ecebe6"
+  code-dim: "#9b9a94"
+  code-key: "#a9a79f"
+  code-str: "#f4f3ef"
 typography:
   display:
     fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
@@ -45,9 +56,63 @@ typography:
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
+  # Brand surface (landing page) only.
+  brand-display:
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    fontSize: "clamp(2.375rem, 1.5rem + 3vw, 4rem)"
+    fontWeight: 800
+    lineHeight: 1.05
+    letterSpacing: "-0.035em"
+  brand-headline:
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    fontSize: "clamp(1.75rem, 1.3rem + 1.8vw, 2.75rem)"
+    fontWeight: 800
+    lineHeight: 1.12
+    letterSpacing: "-0.025em"
+  brand-statement:
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    fontSize: "clamp(1.125rem, 1rem + 0.5vw, 1.375rem)"
+    fontWeight: 600
+    lineHeight: 1.4
+  brand-lede:
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    fontSize: "clamp(1.0625rem, 1rem + 0.35vw, 1.25rem)"
+    fontWeight: 400
+    lineHeight: 1.55
+  brand-title:
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    fontSize: "1.25rem"
+    fontWeight: 700
+    lineHeight: 1.6
+    letterSpacing: "-0.01em"
+  brand-body:
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 400
+    lineHeight: 1.6
+  brand-small:
+    fontFamily: "\"Plus Jakarta Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  mono:
+    fontFamily: "ui-monospace, \"SF Mono\", \"Cascadia Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.875rem"
+    lineHeight: 1.7
+  mono-panel:
+    fontFamily: "ui-monospace, \"SF Mono\", \"Cascadia Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.8125rem"
+    lineHeight: 1.65
+  mono-compact:
+    fontFamily: "ui-monospace, \"SF Mono\", \"Cascadia Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.75rem"
+    lineHeight: 1.65
 rounded:
   sm: "4px"
   md: "8px"
+  pill: "999px"
+  device: "28px"
+  device-screen: "19px"
 spacing:
   xs: "8px"
   sm: "12px"
@@ -55,6 +120,8 @@ spacing:
   lg: "24px"
   field: "40px"
   step: "48px"
+  brand-wrap: "1120px"
+  brand-gutter: "clamp(20px, 4vw, 40px)"
 components:
   button-primary:
     backgroundColor: "{colors.accent-fallback}"
@@ -101,6 +168,61 @@ components:
     backgroundColor: "{colors.track}"
     height: "4px"
     width: "100%"
+  # Brand surface (landing page) only.
+  brand-button-solid:
+    backgroundColor: "{colors.brand-ink}"
+    textColor: "{colors.surface}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: "12px 22px"
+    height: "48px"
+  brand-button-solid-hover:
+    backgroundColor: "{colors.brand-ink-hover}"
+  brand-button-line:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.brand-ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: "12px 22px"
+    height: "48px"
+  brand-button-line-hover:
+    backgroundColor: "{colors.wash}"
+  radio-tab:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.brand-ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.md}"
+    padding: "8px 16px 8px 12px"
+    height: "44px"
+  radio-dot:
+    backgroundColor: "{colors.coral}"
+    size: "18px"
+  code-panel:
+    backgroundColor: "{colors.brand-ink}"
+    textColor: "{colors.code-ink}"
+    typography: "{typography.mono-panel}"
+    rounded: "{rounded.md}"
+    padding: "20px 22px"
+  command-line:
+    backgroundColor: "{colors.brand-ink}"
+    textColor: "{colors.code-ink}"
+    typography: "{typography.mono}"
+    rounded: "{rounded.md}"
+    padding: "16px 20px"
+  inline-code:
+    backgroundColor: "{colors.wash}"
+    textColor: "{colors.brand-ink}"
+    rounded: "{rounded.sm}"
+  lang-pill:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.brand-ink}"
+    typography: "{typography.brand-small}"
+    rounded: "{rounded.pill}"
+    padding: "4px 12px"
+  phone-frame:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.device}"
+    padding: "10px"
 ---
 
 # Design System: quikform
@@ -108,6 +230,8 @@ components:
 ## Overview
 
 **Creative North Star: "The Borrowed Voice"**
+
+This file holds two surfaces. Everything up to "Do's and Don'ts" describes the white-label form pages. quikform's own brand (ink, coral dot, logo) lives on one surface only, the landing page, documented separately under "Brand surface: landing page"; its tokens are marked as brand-only in the frontmatter and never reach a form page.
 
 quikform has no visual identity of its own to push. A form page is one white, left-aligned column of about 680 px, bold labels above outlined fields, generous air between questions, and a single brand accent supplied per project. Everything that is not the accent is neutral grey on white, so the page reads as part of whichever gym, barbershop or bakery sent the link. The pinned references are Tally for the page (column, bold labels, lettered choice chips, dark button with an arrow) and Typeform for the step mode (thin progress bar at the top, full-width thumb-reach button stuck to the bottom of the phone screen).
 
@@ -238,6 +362,89 @@ A newly shown step or conditional field fades in from 4 px below (0.2 s, `cubic-
 - **Don't** add "Powered by" badges, banner photos, gradients or cookie banners.
 - **Don't** add shadows to fields, chips or buttons.
 - **Don't** let a project override the neutral greys or the error red.
+
+## Brand surface: landing page
+
+The static landing page (`site/index.html`, `site/fr/index.html`, `site/style.css`, served by GitHub Pages) is the one place quikform speaks in its own voice. Its world comes from the logo kit (`design/logo/`): a checked radio button that grows a leg into a q. Everything below applies to the landing only; the form pages keep the Borrowed Voice system above and never show the quikform logo, the coral or the brand ink.
+
+**North Star: "The Checked Radio"**
+
+A white page set in ink, one coral dot that only ever means "selected", dark ink code panels beside real phone captures of the form. Content is grouped by thin rules, never by cards. The page shows the JSON an agent writes and the form it becomes, side by side.
+
+**Key Characteristics:**
+- Ink (`{colors.brand-ink}`) on white; coral (`{colors.coral}`) only inside a radio dot.
+- Plus Jakarta Sans 400, 600, 700 and 800, self-hosted variable woff2; the mono stack for code only.
+- Gently rounded 8 px corners everywhere, plus one pill (the language switch) and the phone frame around captures.
+- Flat; depth comes from rules, the ink code panels and the phone frame.
+- Motion in CSS only, removed under `prefers-reduced-motion`.
+
+### Colors
+
+- **Brand Ink** (`{colors.brand-ink}`): all text, the solid button, button borders, the checked tab border, the radio-dot ring, focus outlines, and the background of every code panel. Same value as the logo's ink. Hover on the solid button lifts to `{colors.brand-ink-hover}`.
+- **Coral** (`{colors.coral}`, 3.6:1 on white, 5.1:1 on ink): the filled centre of a radio dot. Nothing else.
+- **Muted Grey** (`{colors.muted}`, 7:1): second line of the hero title, section intros, step and case descriptions, captions, footer legal text.
+- **Boundary Grey** (`{colors.line}`): the language pill, unchecked tab borders and dot rings, the phone frame.
+- **Soft Rule** (`{colors.rule-soft}`): 1 px rules between steps, cases and definitions, inline-code borders, the footer top edge, screenshot edges.
+- **Wash** (`{colors.wash}`): footer, inline code, the line button's hover, the panel holding the two phone captures.
+- **Selection Wash** (`{colors.selection-wash}`): text selection.
+- **Code inks** on Brand Ink: text `{colors.code-ink}`, JSON keys `{colors.code-key}` (7.4:1), strings `{colors.code-str}`, prompts, comments and command output `{colors.code-dim}` (6.6:1). Code is set in tints of one warm grey, no syntax rainbow.
+
+**The Selected Dot Rule.** Coral appears only as the filled centre of a radio dot: the logo, the list markers of the hero facts and the "why" questions, and the checked tab. Never text, a fill, a border, a link or a background.
+
+**The White-Label Boundary Rule.** Brand Ink, Coral and the quikform logo stay on the landing. A form page takes the project's accent and nothing of quikform's.
+
+### Typography
+
+Same family as the forms, Plus Jakarta Sans (owner's choice), pushed to 800 for display. Body text adds `word-spacing: 0.04em` because the face's space reads tight at text sizes; display sizes reset it to 0.
+
+- **Brand Display** (`{typography.brand-display}`, balanced wrap): the hero promise, two lines, the second in Muted Grey at 700.
+- **Brand Headline** (`{typography.brand-headline}`, balanced wrap): section titles.
+- **Brand Statement** (`{typography.brand-statement}`): the "why" questions, each led by a 14 px radio dot.
+- **Brand Lede** (`{typography.brand-lede}`, max 34em): the hero sentence. Section intros sit at 1.125rem in Muted Grey, max 38em.
+- **Brand Title** (`{typography.brand-title}`): use-case names. Step names use the form Title size (1.125rem, 700) led by a muted tabular counter.
+- **Brand Body** (`{typography.brand-body}`): running text. Navigation, tabs and the hero facts at 0.9375rem, facts and tabs at 600.
+- **Brand Small** (`{typography.brand-small}`): captions, notes, the language pill (600), tab labels on phones.
+- **Mono** (`{typography.mono}`): the terminal command and inline code (0.85em). Code panels use `{typography.mono-panel}`; on phones every code block drops to `{typography.mono-compact}` and scrolls sideways rather than wrapping.
+
+**The Code-Only Mono Rule.** The mono stack sets code, commands and field identifiers (the field lists under each use case). It never sets prose, headings, labels or buttons.
+
+### Layout
+
+One centered wrap of `{spacing.brand-wrap}` with `{spacing.brand-gutter}` side padding. The hero is a two-column grid (about 1.35 : 0.65), text left and the phone capture right (max 340 px). "How it works" and "Install" split 0.7 : 1.3 (prose left, code or tabs right); "What's inside" splits 1 : 1 with the code column sticky at 24 px; use cases sit in two columns; "Why" is a narrow 44rem reading column. Sections are spaced `clamp(64px, 9vw, 120px)` apart.
+
+Below 900 px every split stacks to one column and the sticky column becomes static. Below 640 px the navigation keeps only the language pill, use cases go to one column, the action buttons go full width, the three tabs become an equal three-column grid with the dot above the label, and the two phone captures become a horizontal scroll-snap strip.
+
+### Elevation & Depth
+
+Flat. Structure comes from 1 px Soft Rules, the dark code panels against white, and a 2 px ink rule above the closing call to action. The only shadow-like treatments are the checked tab's inset 1 px ink ring (the same doubled border as a selected form chip) and, on phones, a light edge glow inside code panels that signals more code to the side.
+
+### Shapes
+
+Gently rounded rectangles (`{rounded.md}`) for buttons, tabs, code panels and the capture panel; inline code at `{rounded.sm}`. The language switch is the only pill (`{rounded.pill}`). The hero capture sits in a drawn phone frame (`{rounded.device}` outside, `{rounded.device-screen}` on the screen, concentric with its 10 px padding). Radio dots are circles: an ink ring 19 % of the dot's size, with a coral centre at 17 %.
+
+### Components
+
+- **Solid button** (`brand-button-solid`): ink fill, white text at 700, 1.5 px ink border, leading GitHub mark at 18 px. Hover eases to the hover ink (0.15 s ease-out).
+- **Line button** (`brand-button-line`): white with a 1.5 px ink border, trailing 18 px arrow; hover fills with Wash and the arrow nudges 3 px right (0.2 s, `cubic-bezier(0.16, 1, 0.3, 1)`).
+- **Radio tabs (signature)** (`radio-tab`): a fieldset of real native radios, visually hidden but focusable, each label a chip with a 16 px dot. Hover turns the border ink; checked gets an ink border plus inset ink ring and the coral centre; keyboard focus draws a 2 px ink outline, 3 px offset. Switching shows the matching panel with a 0.25 s fade up from 4 px. Without `:has()` all panels show stacked.
+- **Code panel** (`code-panel`, `command-line`): ink background, code inks, `$` prompts dimmed and not selectable, scrolling sideways on overflow.
+- **Language pill** (`lang-pill`): 1 px Boundary Grey border, the other language's code (FR / EN) at 600.
+- **Phone frame** (`phone-frame`): white, 1 px Boundary Grey border, holding a real capture of a quikform form with a muted caption that names the sample brand.
+- **Ruled lists**: steps, use cases and "What's inside" definitions separated by 1 px Soft Rules, not boxed.
+
+### Do's and Don'ts
+
+- **Do** use Coral only inside a radio dot.
+- **Do** show real captures of quikform forms, framed as a phone, and name the sample brand in the caption.
+- **Do** group content with 1 px rules, not cards.
+- **Do** keep code on ink panels in the mono stack, and let it scroll sideways on phones.
+- **Do** keep buttons at 48 px and tabs at 44 px minimum height.
+- **Don't** add eyebrow labels above titles.
+- **Don't** use Coral for text, links, fills or borders.
+- **Don't** use decorative gradients; the only gradients are the drawn dot centre and the phone code panels' scroll-edge cue.
+- **Don't** add shadows to buttons, tabs or panels.
+- **Don't** use JavaScript for motion; tabs and panels work with native radios and CSS.
+- **Don't** put the quikform logo, Coral or Brand Ink on a form page.
 
 ## Open polish items
 

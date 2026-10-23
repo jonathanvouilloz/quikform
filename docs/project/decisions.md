@@ -38,3 +38,7 @@ Telegram : alerte vers le groupe « Wildcat Team » (chatId `-5438163454`, bot `
 
 ## 2026-10-22 — Police : Plus Jakarta Sans, hébergée par quikform
 Choix de Jon parmi Geist, Inter et Plus Jakarta Sans : une police par défaut nette et lisible. Le fichier est servi par quikform lui-même (aucune ressource externe), avec repli sur la police système, en particulier pour le thaï, que la police ne couvre pas. Écartées : les polices système seules, Geist, Inter.
+
+## 2026-10-23 — Logo et page de présentation
+Logo : piste « Radio q » choisie par Jon parmi trois (kit dans `design/logo/`). Il n'apparaît jamais sur les formulaires, qui restent en marque blanche (confirmé par Jon).
+Page de présentation : HTML et CSS statiques dans `site/` (anglais à la racine, français dans `site/fr/`), publiés par GitHub Pages ; aucun outil de génération de site. Références validées par Jon : `design/references/landing/refs.md`. Écarté : la servir depuis le VPS via Caddy (un DNS et une configuration de plus).

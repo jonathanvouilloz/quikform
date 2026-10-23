@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "createdAt": "2026-10-23T09:24:30.541Z",
+        "reason": "Jon chose Plus Jakarta Sans at kickoff (DESIGN.md, CLAUDE.md: fonts are the owner's choice)"
+      }
+    ]
+  }
+}
