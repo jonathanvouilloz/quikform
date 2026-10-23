@@ -206,3 +206,11 @@ test("brand.logo: a plain file name in the project folder, image extension, at m
   }
   for (const slug of ["up", "sub", "dots", "gif", "url"]) expect(by(slug)).toBeUndefined();
 });
+
+test("readSettings: adminHost and adminLang (en or fr)", () => {
+  const h = home({});
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ baseDomain: "forms.example.org", adminHost: "Forms.Example.org", adminLang: "fr" }));
+  expect(readSettings(h)).toEqual({ baseDomain: "forms.example.org", adminHost: "forms.example.org", adminLang: "fr" });
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ adminLang: "de" }));
+  expect(() => readSettings(h)).toThrow();
+});

@@ -267,6 +267,7 @@ Every command reads `QUIKFORM_HOME` (default `~/.local/share/quikform`, or `$XDG
 | `quikform link create --project <slug> --form <id> --label <text>` | Private forms only: creates a link for one person and prints its URL (`…/<id>?k=<token>`). |
 | `quikform link list --project <slug> [--form <id>] [--json]` | Lists the links with their label, state and URL. |
 | `quikform link revoke --project <slug> <token>` | Closes a link; the form then answers "not found" to it. |
+| `quikform admin hash-password` | Reads a password on standard input and prints its argon2id hash for `QUIKFORM_ADMIN_PASSWORD_HASH` (see "Admin"). |
 | `quikform responses --project <slug> [--form <id>] [--limit 50] [--json]` | Lists the latest answers, newest first. Without `--json`: one tab-separated line per answer (`id`, date, form, values, link label). |
 | `quikform serve [--port 8787] [--host 127.0.0.1]` | Starts the server. Needs `QUIKFORM_SECRET` (32 characters or more). Keep the default host unless it runs in a container (the Docker image uses `0.0.0.0` and Compose publishes the port on the host's `127.0.0.1` only). |
 | `quikform --help` | Prints the usage. |
@@ -321,13 +322,37 @@ On the server side, once:
 
 A new project is then online as soon as `quikform project init` has run, with no DNS or Caddy change.
 
+## Admin (read-only)
+
+A small read-only view, behind a password, to see every project, its forms, their status and the answers, from a browser or a phone. It changes nothing: forms and links are still made with the command line (or by your agent).
+
+- **Projects**: number of forms and answers, date of the last answer.
+- **Forms of a project**: public or private, status (public: number of answers; private: "Not started", "In progress (1 of 2)", "Complete" once every active link has answered), and the links to share with a Copy button (one per person for a private form, with who has answered).
+- **One form**: every answer, newest first, question by question with readable values, the date and the link it came from; the list of questions while there is no answer.
+
+Turn it on:
+
+1. Choose its host name and language in `$QUIKFORM_HOME/quikform.json`, for example the bare base domain:
+   ```json
+   { "baseDomain": "forms.example.com", "adminHost": "forms.example.com", "adminLang": "en" }
+   ```
+   `adminLang` is `en` or `fr`.
+2. Hash a password and give the hash to `serve` as `QUIKFORM_ADMIN_PASSWORD_HASH` (in `~/.config/quikform/env`, or in `.env` next to `compose.yaml`):
+   ```sh
+   read -rs P && printf %s "$P" | quikform admin hash-password
+   ```
+   With Docker: `read -rs P && printf %s "$P" | docker compose run --rm -T quikform admin hash-password`. In a `.env` file used by Compose, double every `$` of the hash (`$$argon2id$$...`), or Compose reads it as a variable.
+3. Point the host at the server: a DNS record and a Caddy block (`forms.example.com { reverse_proxy 127.0.0.1:8787 }`), or add it to the on-demand block of the shared domain. `/_qf/tls` accepts the admin host. Restart `serve`.
+
+Without both `adminHost` and the hash, the admin does not exist (404). Sign-in sets an `HttpOnly`, `Secure`, `SameSite=Strict` cookie for 30 days, signed with `QUIKFORM_SECRET`; changing the password or the secret signs everyone out. "Sign out" only clears the current browser: to cut off a session on a lost device, change the password. Ten wrong passwords from one IP (or one IPv6 /64) block it for 15 minutes, and 50 wrong passwords in 15 minutes from anywhere block every sign-in for the rest of that window: use a long random password. Admin pages are never cached and ask search engines not to index them. Dates use the server's time zone (set `TZ`, for example `TZ=Europe/Zurich`, in the service environment).
+
 ## What `serve` does while it runs
 
 - Listens on **127.0.0.1 only**: it is never reachable from the internet without your reverse proxy.
 - Every 10 seconds, reloads a project whose `project.json`, `.env` or `forms/` listing changed. An invalid file is logged and the previous version keeps running.
 - Once a day (and at start), deletes answers older than the project's `retentionMonths`.
 - Sends Telegram alerts from a queue stored in the database, retrying after 1, 5, 30 and then every 60 minutes if Telegram fails. An alert is never sent twice, and alert texts and tokens never appear in the logs.
-- Uses `QUIKFORM_SECRET` to sign the time each form page was served, so a submission sent less than 3 seconds after loading the page is refused. Changing the secret only invalidates pages that are open at that moment.
+- Uses `QUIKFORM_SECRET` to sign the time each form page was served, so a submission sent less than 3 seconds after loading the page is refused. Changing the secret invalidates pages that are open at that moment and, with the admin on, every admin session. Keep the file that holds it readable only by the service user (`chmod 600`).
 - Refuses request bodies over 64 KB and more than 10 submissions per IP in 10 minutes. The IP is the last entry of `X-Forwarded-For`, which is right when exactly one proxy (Caddy) sits in front.
 - Sends a strict Content Security Policy: every page loads only quikform's own CSS, script, font and logo.
 

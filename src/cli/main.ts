@@ -16,9 +16,11 @@ const USAGE = `usage:
   quikform link create --project <slug> --form <id> --label <text>
   quikform link list --project <slug> [--form <id>] [--json]
   quikform link revoke --project <slug> <token>
+  quikform admin hash-password   (reads the password on stdin, prints QUIKFORM_ADMIN_PASSWORD_HASH)
   quikform project init <slug> [--domain <host>] [--accent #rrggbb] [--name <brand>]
-environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters)
-settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com"}`;
+environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters),
+  QUIKFORM_ADMIN_PASSWORD_HASH (serve, optional: enables the read-only admin on adminHost)
+settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com", "adminHost": "forms.example.com", "adminLang": "en"}`;
 
 class Fail extends Error {
   constructor(message: string, readonly code = 1) {
@@ -174,6 +176,12 @@ function linkRevoke(args: string[]) {
   console.log("revoked");
 }
 
+async function adminHashPassword() {
+  const password = (await Bun.stdin.text()).replace(/\r?\n$/, "");
+  if (!password) throw new Fail("type the password on stdin, e.g. read -rs P && printf %s \"$P\" | quikform admin hash-password", 2);
+  console.log(await Bun.password.hash(password, { algorithm: "argon2id" }));
+}
+
 function projectInit(args: string[]) {
   const { values, positionals } = parseArgs({
     args,
@@ -231,14 +239,18 @@ function serve(args: string[]) {
   process.on("SIGINT", () => stop());
 
   // Read once: changing baseDomain needs a restart.
-  const { baseDomain } = settings();
+  const { baseDomain, adminHost, adminLang } = settings();
+  const passwordHash = process.env.QUIKFORM_ADMIN_PASSWORD_HASH ?? "";
+  if (passwordHash && !passwordHash.startsWith("$argon2")) throw new Fail("QUIKFORM_ADMIN_PASSWORD_HASH must come from `quikform admin hash-password`");
+  const admin = adminHost && passwordHash ? { host: adminHost, passwordHash, lang: adminLang ?? ("en" as const) } : undefined;
+  if (!admin && (adminHost || passwordHash)) console.error("quikform: admin disabled: it needs both adminHost in quikform.json and QUIKFORM_ADMIN_PASSWORD_HASH");
   const projects: Project[] = [];
   const seen = new Map<string, string>();
   const reload = guarded("reload", () => syncProjects(h, projects, seen, baseDomain));
   const purgeAll = guarded("purge", () => purge(projects));
   reload();
   purgeAll();
-  const server = Bun.serve({ hostname: values.host, port, fetch: createApp({ projects, secret, baseDomain }).fetch });
+  const server = Bun.serve({ hostname: values.host, port, fetch: createApp({ projects, secret, baseDomain, admin }).fetch });
   console.log(`listening on ${values.host}:${server.port}`);
   // Load errors were already logged by syncProjects.
   for (const p of projects) console.log(`project ${p.slug}: ${p.forms.size} forms`);
@@ -254,9 +266,9 @@ function serve(args: string[]) {
   };
 }
 
-const commands: Record<string, (args: string[]) => void> = {
+const commands: Record<string, (args: string[]) => void | Promise<void>> = {
   serve, check, "form put": formPut, responses, "project init": projectInit,
-  "link create": linkCreate, "link list": linkList, "link revoke": linkRevoke,
+  "link create": linkCreate, "link list": linkList, "link revoke": linkRevoke, "admin hash-password": adminHashPassword,
 };
 
 try {
@@ -266,7 +278,7 @@ try {
     const two = `${argv[0]} ${argv[1]}`;
     const key = Object.hasOwn(commands, two) ? two : argv[0] ?? "";
     if (!Object.hasOwn(commands, key)) throw new Fail("unknown command", 2);
-    commands[key]!(argv.slice(key.split(" ").length));
+    await commands[key]!(argv.slice(key.split(" ").length));
   }
 } catch (e) {
   const code = e instanceof Fail ? e.code : (e as { code?: string }).code?.startsWith("ERR_PARSE_ARGS") ? 2 : 1;

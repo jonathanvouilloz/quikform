@@ -124,6 +124,8 @@ body {
 
 .qf-field input[type="text"],
 .qf-field input[type="email"],
+.qf-field input[type="password"],
+.qf-admin-copy input,
 .qf-field textarea {
   display: block;
   width: 100%;
@@ -253,3 +255,22 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* Read-only admin: lists of projects, forms and answers. */
+.qf-admin a { color: var(--qf-text); text-underline-offset: 0.2em; }
+.qf-admin-out { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
+.qf-admin-linkbtn { padding: 0.5rem 0.75rem; border: 1px solid var(--qf-line); border-radius: var(--qf-radius); background: #fff; color: inherit; font: inherit; font-size: 0.9375rem; cursor: pointer; white-space: nowrap; }
+.qf-admin-linkbtn:hover { border-color: var(--qf-text); }
+.qf-admin-error { margin: 1.5rem 0 0; color: var(--qf-error); font-weight: 600; }
+.qf-admin-list { margin: 2rem 0 0; padding: 0; list-style: none; }
+.qf-admin-row { display: grid; gap: 0.375rem; padding: 1.25rem 0; border-top: 1px solid #e3e3e3; }
+.qf-admin-name { font-size: 1.125rem; font-weight: 700; }
+.qf-admin-meta { color: var(--qf-muted); font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.qf-admin-links { margin: 0.5rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
+.qf-admin-who { display: block; margin-bottom: 0.25rem; font-size: 0.9375rem; }
+.qf-admin-copy { display: flex; gap: 0.5rem; align-items: center; }
+.qf-admin-copy input { min-height: 40px; padding: 0.375rem 0.625rem; font-size: 0.875rem; color: var(--qf-muted); }
+.qf-admin-answer { margin-top: 2.5rem; }
+.qf-admin-answer dl { margin: 0; }
+.qf-admin-answer dt { margin-top: 1rem; font-weight: 600; }
+.qf-admin-answer dd { margin: 0.25rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }

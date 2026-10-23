@@ -7,6 +7,8 @@ import { validateResponse } from "../definition/response";
 import { renderBrandCss, renderFormPage, renderNotFoundPage, renderThankYouPage, styles } from "../render/page";
 import { resolveProject, type Project } from "../projects/registry";
 import { flushOutbox, queueAlert } from "../notify/telegram";
+import { createAdmin, type AdminConfig } from "../admin/routes";
+import { ADMIN_JS } from "../admin/pages";
 // Built by scripts/build-client.ts (the test preload runs it); the text import embeds it in the compiled binary.
 import clientJs from "../../dist/app.js" with { type: "text" };
 // File imports give a path that --compile embeds in the binary.
@@ -24,7 +26,7 @@ const RATE_MAX = 10;
 const RATE_WINDOW_MS = 10 * 60_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function createApp(opts: { projects: Project[]; secret: string; now?: () => Date; baseDomain?: string }): Hono {
+export function createApp(opts: { projects: Project[]; secret: string; now?: () => Date; baseDomain?: string; admin?: AdminConfig }): Hono {
   const { projects, secret, baseDomain } = opts;
   const project = (host: string | undefined) => resolveProject(projects, host ?? "", baseDomain);
   const now = opts.now ?? (() => new Date());
@@ -77,6 +79,18 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
   });
   app.notFound(notFound);
 
+  // The admin host serves only the admin (plus the shared /_qf/ assets); without admin settings it does not exist.
+  if (opts.admin) {
+    const host = opts.admin.host;
+    const admin = createAdmin({ config: opts.admin, projects, secret, baseDomain, now, clientIp });
+    app.use(async (c, next) => {
+      const name = (c.req.header("host") ?? "").toLowerCase().replace(/:\d+$/, "");
+      if (name !== host || c.req.path.startsWith("/_qf/")) return next();
+      c.res = await admin.fetch(c.req.raw);
+    });
+  }
+  app.get("/_qf/admin.js", (c) => c.body(ADMIN_JS, 200, { "Content-Type": "application/javascript; charset=utf-8" }));
+
   app.get("/_qf/app.css", (c) => c.body(styles, 200, { "Content-Type": "text/css; charset=utf-8" }));
   app.get("/_qf/app.js", (c) => c.body(clientJs, 200, { "Content-Type": "application/javascript; charset=utf-8" }));
   app.get("/_qf/fonts/:file", async (c) => {
@@ -102,7 +116,10 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
   });
 
   // Caddy's on-demand TLS asks here before getting a certificate, so unknown names never get one.
-  app.get("/_qf/tls", (c) => (project(c.req.query("domain")) ? c.text("ok") : notFound(c)));
+  app.get("/_qf/tls", (c) => {
+    const domain = c.req.query("domain")?.toLowerCase();
+    return project(domain) || (opts.admin && domain === opts.admin.host) ? c.text("ok") : notFound(c);
+  });
 
   app.get("/:form", (c) => {
     const r = lookup(c);

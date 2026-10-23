@@ -274,3 +274,36 @@ test("purge: a failing project is logged and the others are still purged", async
     proc.kill();
   }
 });
+
+test("admin hash-password hashes stdin with argon2id; empty input is a usage error", async () => {
+  const run = (input: string) => {
+    const r = Bun.spawnSync(["bun", path.join(root, "src/cli/main.ts"), "admin", "hash-password"], { stdin: Buffer.from(input), env: { PATH: process.env.PATH! } });
+    return { code: r.exitCode, out: r.stdout.toString().trim() };
+  };
+  const ok = run("correct horse\n");
+  expect(ok.code).toBe(0);
+  expect(ok.out).toStartWith("$argon2id$");
+  expect(await Bun.password.verify("correct horse", ok.out)).toBe(true);
+  expect(run("\n").code).toBe(2);
+});
+
+test("serve enables the admin only with adminHost and QUIKFORM_ADMIN_PASSWORD_HASH", async () => {
+  const home = setup();
+  fs.writeFileSync(path.join(home, "quikform.json"), JSON.stringify({ adminHost: "admin.test", adminLang: "fr" }));
+  const hash = await Bun.password.hash("pw", { algorithm: "argon2id" });
+  const status = async (env: Record<string, string>) => {
+    const proc = Bun.spawn(["bun", path.join(root, "src/cli/main.ts"), "serve", "--port", "0"], {
+      env: { PATH: process.env.PATH!, QUIKFORM_HOME: home, QUIKFORM_SECRET: "s".repeat(40), ...env }, stdout: "pipe", stderr: "pipe",
+    });
+    try {
+      const port = /listening on [^:]+:(\d+)/.exec(await untilListening(proc))![1];
+      const r = await fetch(`http://127.0.0.1:${port}/login`, { headers: { host: "admin.test" } });
+      return [r.status, (await r.text()).includes("Mot de passe")];
+    } finally {
+      proc.kill();
+      await proc.exited;
+    }
+  };
+  expect(await status({ QUIKFORM_ADMIN_PASSWORD_HASH: hash })).toEqual([200, true]);
+  expect((await status({}))[0]).toBe(404);
+});
