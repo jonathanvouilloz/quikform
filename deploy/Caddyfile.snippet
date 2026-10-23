@@ -1,6 +1,22 @@
-# quikform site block, to add to /etc/caddy/Caddyfile.
+# quikform blocks, to add to /etc/caddy/Caddyfile.
 # The global `default_bind` of the server's Caddyfile already limits Caddy to the public IPs, so no bind line here.
 # quikform itself listens on 127.0.0.1:8787 and is never exposed directly.
+
+# A) One domain per project:
 forms.example.com {
+	reverse_proxy 127.0.0.1:8787
+}
+
+# B) One base domain for every project ("baseDomain" in quikform.json, wildcard DNS record).
+# The on_demand_tls option goes in the global options block at the top of the Caddyfile.
+# {
+# 	on_demand_tls {
+# 		ask http://127.0.0.1:8787/_qf/tls
+# 	}
+# }
+*.forms.example.com {
+	tls {
+		on_demand
+	}
 	reverse_proxy 127.0.0.1:8787
 }
