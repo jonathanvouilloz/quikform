@@ -99,18 +99,21 @@ The domain `localhost` works because quikform finds the project from the `Host` 
 
 ## Try it with Docker
 
+A ready-made image is published for every change: `ghcr.io/jonathanvouilloz/quikform` (`latest`, Linux amd64 and arm64). No clone and no build needed:
+
 ```sh
-git clone https://github.com/jonathanvouilloz/quikform
-cd quikform
+mkdir quikform && cd quikform
+curl -fsSLO https://raw.githubusercontent.com/jonathanvouilloz/quikform/main/compose.yaml
 echo "QUIKFORM_SECRET=$(openssl rand -hex 32)" > .env
-docker compose up -d --build
+docker compose up -d
+curl -fsSLO https://raw.githubusercontent.com/jonathanvouilloz/quikform/main/examples/demo/forms/demo.json
 
 docker compose exec quikform quikform project init demo --domain localhost --name "Demo"
-docker compose cp examples/demo/forms/demo.json quikform:/data/demo.json
+docker compose cp demo.json quikform:/data/demo.json
 docker compose exec quikform quikform form put --project demo /data/demo.json
 ```
 
-Open http://localhost:8787/demo. Every command of the "Command line" section works the same way, prefixed with `docker compose exec quikform`. A form file must be inside the container first: copy it with `docker compose cp <file> quikform:/data/<file>`. Projects and answers live in the `quikform-data` volume, so they survive `docker compose down` and image rebuilds.
+Open http://localhost:8787/demo. Every command of the "Command line" section works the same way, prefixed with `docker compose exec quikform`. A form file must be inside the container first: copy it with `docker compose cp <file> quikform:/data/<file>`. Projects and answers live in the `quikform-data` volume, so they survive `docker compose down` and image updates. Without Compose: `docker run -d -p 127.0.0.1:8787:8787 -e QUIKFORM_SECRET=... -v quikform-data:/data ghcr.io/jonathanvouilloz/quikform`. To build the image yourself from a clone: `docker compose up -d --build`.
 
 ## Files and folders
 
@@ -347,9 +350,10 @@ Two ways, same result: Docker Compose, or the executable with a systemd service.
 1. **DNS** and **Caddy**: as in steps 1 and 6 below, or once for every project with "One base domain for every project".
 2. On the server:
    ```sh
-   git clone https://github.com/jonathanvouilloz/quikform && cd quikform
+   mkdir quikform && cd quikform
+   curl -fsSLO https://raw.githubusercontent.com/jonathanvouilloz/quikform/main/compose.yaml
    echo "QUIKFORM_SECRET=$(openssl rand -hex 32)" > .env && chmod 600 .env
-   docker compose up -d --build
+   docker compose up -d
    docker compose exec quikform quikform project init gym --domain forms.example.com --name "Example Gym"
    ```
 3. For a shared base domain, write the settings file into the volume and restart:
@@ -357,7 +361,7 @@ Two ways, same result: Docker Compose, or the executable with a systemd service.
    echo '{ "baseDomain": "forms.example.com" }' > quikform.json
    docker compose cp quikform.json quikform:/data/quikform.json && docker compose restart
    ```
-4. Logs: `docker compose logs -f`. Update: `git pull && docker compose up -d --build`. Backup: `docker compose cp quikform:/data ./backup`.
+4. Logs: `docker compose logs -f`. Update: `docker compose pull && docker compose up -d`. Backup: `docker compose cp quikform:/data ./backup`.
 
 ### With the executable and systemd
 

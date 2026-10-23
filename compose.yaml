@@ -1,7 +1,8 @@
-# docker compose up -d --build   (needs QUIKFORM_SECRET in .env next to this file)
+# docker compose up -d   (needs QUIKFORM_SECRET in .env next to this file)
 services:
   quikform:
-    build: .
+    image: ghcr.io/jonathanvouilloz/quikform:latest
+    build: . # used by `docker compose up --build` in a clone; otherwise the image above is pulled
     restart: unless-stopped
     environment:
       QUIKFORM_SECRET: ${QUIKFORM_SECRET:?set QUIKFORM_SECRET (32+ characters) in .env}
