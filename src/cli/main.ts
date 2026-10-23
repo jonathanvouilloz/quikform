@@ -18,8 +18,9 @@ const USAGE = `usage:
   quikform link revoke --project <slug> <token>
   quikform admin hash-password   (reads the password on stdin, prints QUIKFORM_ADMIN_PASSWORD_HASH)
   quikform project init <slug> [--domain <host>] [--accent #rrggbb] [--name <brand>]
-environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters)
-settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com"}`;
+environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters),
+  QUIKFORM_ADMIN_PASSWORD_HASH (serve, optional: enables the read-only admin on adminHost)
+settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com", "adminHost": "forms.example.com", "adminLang": "en"}`;
 
 class Fail extends Error {
   constructor(message: string, readonly code = 1) {
@@ -238,14 +239,18 @@ function serve(args: string[]) {
   process.on("SIGINT", () => stop());
 
   // Read once: changing baseDomain needs a restart.
-  const { baseDomain } = settings();
+  const { baseDomain, adminHost, adminLang } = settings();
+  const passwordHash = process.env.QUIKFORM_ADMIN_PASSWORD_HASH ?? "";
+  if (passwordHash && !passwordHash.startsWith("$argon2")) throw new Fail("QUIKFORM_ADMIN_PASSWORD_HASH must come from `quikform admin hash-password`");
+  const admin = adminHost && passwordHash ? { host: adminHost, passwordHash, lang: adminLang ?? ("en" as const) } : undefined;
+  if (!admin && (adminHost || passwordHash)) console.error("quikform: admin disabled: it needs both adminHost in quikform.json and QUIKFORM_ADMIN_PASSWORD_HASH");
   const projects: Project[] = [];
   const seen = new Map<string, string>();
   const reload = guarded("reload", () => syncProjects(h, projects, seen, baseDomain));
   const purgeAll = guarded("purge", () => purge(projects));
   reload();
   purgeAll();
-  const server = Bun.serve({ hostname: values.host, port, fetch: createApp({ projects, secret, baseDomain }).fetch });
+  const server = Bun.serve({ hostname: values.host, port, fetch: createApp({ projects, secret, baseDomain, admin }).fetch });
   console.log(`listening on ${values.host}:${server.port}`);
   // Load errors were already logged by syncProjects.
   for (const p of projects) console.log(`project ${p.slug}: ${p.forms.size} forms`);

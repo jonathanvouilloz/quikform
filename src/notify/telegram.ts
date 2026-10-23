@@ -13,7 +13,7 @@ const BACKOFF_MINUTES = [1, 5, 30, 60];
 /** Delay before the next try, given how many sends have failed so far (1-based). */
 export const backoffMs = (failures: number) => BACKOFF_MINUTES[Math.min(failures, BACKOFF_MINUTES.length) - 1]! * 60_000;
 
-function show(def: FormDefinition, f: Field, v: Values[string]): string {
+export function formatValue(def: FormDefinition, f: Field, v: Values[string]): string {
   if (typeof v === "boolean") return t(def.lang, def.address, v ? "yes" : "no");
   const label = (x: string) => f.options?.find((o) => o.value === x)?.label ?? x;
   return Array.isArray(v) ? v.map(label).join(", ") : typeof v === "string" ? label(v) : String(v);
@@ -25,7 +25,7 @@ export function formatAlert(def: FormDefinition, values: Values): string {
   const lines = def.steps
     .flatMap((s) => s.fields)
     .filter((f) => f.id in values)
-    .map((f) => `${f.label} : ${show(def, f, values[f.id]!)}`);
+    .map((f) => `${f.label} : ${formatValue(def, f, values[f.id]!)}`);
   return join(def.title, lines);
 }
 
