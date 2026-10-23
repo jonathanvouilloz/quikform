@@ -76,14 +76,33 @@ test("project init writes project.json and forms/, refuses an existing project a
   expect(qf(home, ["project", "init", "../evil", "--domain", "x.test"]).code).toBe(1);
 });
 
+test("project init without --domain needs baseDomain; form put prints the shared-domain url", () => {
+  const home = tmp();
+  expect(qf(home, ["project", "init", "demo"]).code).toBe(2);
+  fs.writeFileSync(path.join(home, "quikform.json"), JSON.stringify({ baseDomain: "forms.test" }));
+  expect(qf(home, ["project", "init", "demo"]).code).toBe(0);
+  expect(JSON.parse(fs.readFileSync(path.join(home, "projects/demo/project.json"), "utf8")).domains).toEqual([]);
+  const put = qf(home, ["form", "put", "--project", "demo", write(home, "f.json", minimal)]);
+  expect(put.out.trim().split("\n")).toEqual([`ok ${minimal.id} v1`, `url https://demo.forms.test/${minimal.id}`]);
+});
+
+test("without QUIKFORM_HOME, home defaults to $XDG_DATA_HOME/quikform", () => {
+  const xdg = tmp();
+  const r = Bun.spawnSync(["bun", path.join(root, "src/cli/main.ts"), "project", "init", "x", "--domain", "x.test"], {
+    env: { PATH: process.env.PATH!, XDG_DATA_HOME: xdg },
+  });
+  expect(r.exitCode).toBe(0);
+  expect(fs.existsSync(path.join(xdg, "quikform/projects/x/project.json"))).toBe(true);
+});
+
 test("form put: refuses invalid, bumps version on change, no write when identical", () => {
   const home = setup();
   const target = path.join(home, "projects/acme/forms", `${minimal.id}.json`);
   const f = write(home, "f.json", minimal);
-  expect(qf(home, ["form", "put", "--project", "acme", f]).out.trim()).toBe(`ok ${minimal.id} v1`);
+  expect(qf(home, ["form", "put", "--project", "acme", f]).out.trim()).toBe(`ok ${minimal.id} v1\nurl https://forms.acme.test/${minimal.id}`);
   expect(qf(home, ["form", "put", "--project", "acme", f]).out.trim()).toBe(`unchanged ${minimal.id} v1`);
   const changed = write(home, "g.json", { ...minimal, title: "Changed title" });
-  expect(qf(home, ["form", "put", "--project", "acme", changed]).out.trim()).toBe(`ok ${minimal.id} v2`);
+  expect(qf(home, ["form", "put", "--project", "acme", changed]).out.split("\n")[0]).toBe(`ok ${minimal.id} v2`);
   expect(JSON.parse(fs.readFileSync(target, "utf8")).version).toBe(2);
   const before = fs.readFileSync(target, "utf8");
   const bad = qf(home, ["form", "put", "--project", "acme", write(home, "h.json", { id: minimal.id })]);

@@ -209,3 +209,18 @@ test("body over 64 KB -> 413, nothing stored", async () => {
   expect(res.status).toBe(413);
   expect(count(project)).toBe(0);
 });
+
+test("/_qf/tls says 200 only for a host that resolves to a project", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "qf-tls-"));
+  dirs.push(dir);
+  const acgb: Project = { slug: "acgb", dir, domains: [], brand: { name: "A", accent: "#000" }, retentionMonths: 12,
+    forms: new Map(), db: openProjectDb(path.join(dir, "data.sqlite")), loadErrors: [] };
+  const { project } = setup();
+  const app = createApp({ projects: [project, acgb], secret: SECRET, baseDomain: "forms.jonlabs.ch" });
+  const tls = async (q: string) => (await app.request(`/_qf/tls${q}`)).status;
+  expect(await tls("?domain=acgb.forms.jonlabs.ch")).toBe(200);
+  expect(await tls("?domain=forms.acme.test")).toBe(200);
+  expect(await tls("?domain=inconnu.forms.jonlabs.ch")).toBe(404);
+  expect(await tls("?domain=forms.jonlabs.ch")).toBe(404);
+  expect(await tls("")).toBe(404);
+});

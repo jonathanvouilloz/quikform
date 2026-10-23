@@ -1,9 +1,10 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { parseDefinition } from "../definition/schema";
 import { startOutboxLoop } from "../notify/telegram";
-import { HOSTNAME, syncProjects, type Project } from "../projects/registry";
+import { HOSTNAME, projectUrl, readSettings, syncProjects, type Project } from "../projects/registry";
 import { createApp } from "../server/app";
 import { cutoff, openProjectDb } from "../store/db";
 
@@ -12,8 +13,9 @@ const USAGE = `usage:
   quikform check <file.json>
   quikform form put --project <slug> <file.json>
   quikform responses --project <slug> [--form <id>] [--limit 50] [--json]
-  quikform project init <slug> --domain <host> [--accent #rrggbb] [--name <brand>]
-environment: QUIKFORM_HOME (all but check), QUIKFORM_SECRET (serve, 32+ characters)`;
+  quikform project init <slug> [--domain <host>] [--accent #rrggbb] [--name <brand>]
+environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters)
+settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com"}`;
 
 class Fail extends Error {
   constructor(message: string, readonly code = 1) {
@@ -26,9 +28,16 @@ const RELOAD_MS = 10_000;
 const PURGE_MS = 24 * 3600_000;
 
 function home(): string {
-  const h = process.env.QUIKFORM_HOME;
-  if (!h) throw new Fail("QUIKFORM_HOME is not set");
-  return h;
+  const data = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share");
+  return process.env.QUIKFORM_HOME || path.join(data, "quikform");
+}
+
+function settings() {
+  try {
+    return readSettings(home());
+  } catch (e) {
+    throw new Fail(e instanceof Error ? e.message : String(e));
+  }
 }
 
 // Resolves only $QUIKFORM_HOME/projects/<slug>; the slug pattern rules out any path separator.
@@ -50,6 +59,14 @@ function readDefinition(file: string | undefined) {
   const r = parseDefinition(raw);
   if (!r.ok) throw new Fail(r.errors.join("\n"));
   return { raw: raw as Record<string, unknown>, def: r.value };
+}
+
+function projectDomains(dir: string): string[] {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, "project.json"), "utf8")).domains ?? [];
+  } catch {
+    return [];
+  }
 }
 
 function check(args: string[]) {
@@ -82,6 +99,8 @@ function formPut(args: string[]) {
   fs.writeFileSync(tmp, JSON.stringify({ ...raw, version }, null, 2) + "\n");
   fs.renameSync(tmp, target);
   console.log(`ok ${def.id} v${version}`);
+  const url = projectUrl({ slug: path.basename(dir), domains: projectDomains(dir) }, settings().baseDomain);
+  if (url) console.log(`url ${url}/${def.id}`);
 }
 
 function responses(args: string[]) {
@@ -112,14 +131,16 @@ function projectInit(args: string[]) {
   });
   const slug = positionals[0];
   if (!slug || !SLUG.test(slug)) throw new Fail(`invalid project slug "${slug ?? ""}"`);
-  if (!values.domain || !HOSTNAME.test(values.domain)) throw new Fail("--domain must be a hostname, e.g. forms.example.com", 2);
+  if (values.domain === undefined ? !settings().baseDomain : !HOSTNAME.test(values.domain)) {
+    throw new Fail("--domain must be a hostname, e.g. forms.example.com (optional once baseDomain is set in quikform.json)", 2);
+  }
   if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(values.accent)) throw new Fail("--accent must be #rgb or #rrggbb", 2);
   const root = path.join(home(), "projects");
   fs.mkdirSync(root, { recursive: true });
   const dir = path.join(root, slug);
   if (fs.existsSync(dir)) throw new Fail(`project "${slug}" already exists`);
   fs.mkdirSync(path.join(dir, "forms"), { recursive: true });
-  const config = { domains: [values.domain.toLowerCase()], brand: { name: values.name ?? slug, accent: values.accent }, retentionMonths: 12 };
+  const config = { domains: values.domain ? [values.domain.toLowerCase()] : [], brand: { name: values.name ?? slug, accent: values.accent }, retentionMonths: 12 };
   fs.writeFileSync(path.join(dir, "project.json"), JSON.stringify(config, null, 2) + "\n");
   console.log(`ok project ${slug} created in ${dir}`);
 }
@@ -156,13 +177,15 @@ function serve(args: string[]) {
   process.on("SIGTERM", () => stop());
   process.on("SIGINT", () => stop());
 
+  // Read once: changing baseDomain needs a restart.
+  const { baseDomain } = settings();
   const projects: Project[] = [];
   const seen = new Map<string, string>();
-  const reload = guarded("reload", () => syncProjects(h, projects, seen));
+  const reload = guarded("reload", () => syncProjects(h, projects, seen, baseDomain));
   const purgeAll = guarded("purge", () => purge(projects));
   reload();
   purgeAll();
-  const server = Bun.serve({ hostname: "127.0.0.1", port, fetch: createApp({ projects, secret }).fetch });
+  const server = Bun.serve({ hostname: "127.0.0.1", port, fetch: createApp({ projects, secret, baseDomain }).fetch });
   console.log(`listening on 127.0.0.1:${server.port}`);
   // Load errors were already logged by syncProjects.
   for (const p of projects) console.log(`project ${p.slug}: ${p.forms.size} forms`);

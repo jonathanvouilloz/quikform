@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import minimal from "../fixtures/minimal.json";
-import { loadProjects, resolveProject, syncProjects, type Project } from "../../src/projects/registry";
+import { loadProjects, projectUrl, readSettings, resolveProject, syncProjects, type Project } from "../../src/projects/registry";
 
 const dirs: string[] = [];
 function home(files: Record<string, unknown>): string {
@@ -47,6 +47,41 @@ test("resolveProject matches host case-insensitively, ignores port", () => {
   expect(resolveProject(ps, "FORMS.example.com:8080")?.slug).toBe("a");
   expect(resolveProject(ps, "other.test")?.slug).toBe("b");
   expect(resolveProject(ps, "nope.test")).toBeUndefined();
+});
+
+test("resolveProject: <slug>.<baseDomain> finds a project without domains, nothing deeper or bare", () => {
+  const h = home({ "acgb/project.json": { brand: pj.brand }, "a/project.json": pj });
+  const ps = loadProjects(h);
+  expect(ps.find((p) => p.slug === "acgb")?.domains).toEqual([]);
+  expect(resolveProject(ps, "ACGB.forms.jonlabs.ch:443", "forms.jonlabs.ch")?.slug).toBe("acgb");
+  expect(resolveProject(ps, "forms.example.com", "forms.jonlabs.ch")?.slug).toBe("a");
+  expect(resolveProject(ps, "forms.jonlabs.ch", "forms.jonlabs.ch")).toBeUndefined();
+  expect(resolveProject(ps, "x.acgb.forms.jonlabs.ch", "forms.jonlabs.ch")).toBeUndefined();
+  expect(resolveProject(ps, "acgb.forms.jonlabs.ch")).toBeUndefined();
+});
+
+test("a project with no domain and no baseDomain loads with a load error", () => {
+  const [p] = loadProjects(home({ "acgb/project.json": { brand: pj.brand } }));
+  expect(p!.loadErrors).toContain("no domain: set domains in project.json or baseDomain in quikform.json");
+  const [q] = loadProjects(home({ "acgb/project.json": { brand: pj.brand } }), "forms.jonlabs.ch");
+  expect(q!.loadErrors).toEqual([]);
+});
+
+test("projectUrl: first explicit domain, else slug under baseDomain, else undefined", () => {
+  expect(projectUrl({ slug: "w", domains: ["formulaire.w.com"] }, "forms.jonlabs.ch")).toBe("https://formulaire.w.com");
+  expect(projectUrl({ slug: "acgb", domains: [] }, "forms.jonlabs.ch")).toBe("https://acgb.forms.jonlabs.ch");
+  expect(projectUrl({ slug: "acgb", domains: [] })).toBeUndefined();
+});
+
+test("readSettings: missing file is {}, valid baseDomain is lowercased, bad file throws", () => {
+  const h = home({});
+  expect(readSettings(h)).toEqual({});
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ baseDomain: "Forms.JonLabs.ch" }));
+  expect(readSettings(h)).toEqual({ baseDomain: "forms.jonlabs.ch" });
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ baseDomain: "not a host" }));
+  expect(() => readSettings(h)).toThrow();
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ baseDomain: "a.test", extra: 1 }));
+  expect(() => readSettings(h)).toThrow();
 });
 
 test("token is read from the project's .env, never from project.json", () => {

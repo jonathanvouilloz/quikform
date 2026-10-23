@@ -24,8 +24,9 @@ const RATE_MAX = 10;
 const RATE_WINDOW_MS = 10 * 60_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function createApp(opts: { projects: Project[]; secret: string; now?: () => Date }): Hono {
-  const { projects, secret } = opts;
+export function createApp(opts: { projects: Project[]; secret: string; now?: () => Date; baseDomain?: string }): Hono {
+  const { projects, secret, baseDomain } = opts;
+  const project = (host: string | undefined) => resolveProject(projects, host ?? "", baseDomain);
   const now = opts.now ?? (() => new Date());
   const app = new Hono();
   // shortcut: fixed window per IP, in memory; resets on restart. Upgrade if the server ever runs on several processes.
@@ -59,9 +60,9 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     return c.html(html, status);
   };
   const lookup = (c: Context) => {
-    const project = resolveProject(projects, c.req.header("host") ?? "");
-    const def = project?.forms.get(c.req.param("form") ?? "");
-    return project && def ? { project, def } : undefined;
+    const p = project(c.req.header("host"));
+    const def = p?.forms.get(c.req.param("form") ?? "");
+    return p && def ? { project: p, def } : undefined;
   };
 
   app.use(async (c, next) => {
@@ -80,11 +81,11 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     return c.body(await Bun.file(f).bytes(), 200, { "Content-Type": "font/woff2", "Cache-Control": "public, max-age=31536000, immutable" });
   });
   app.get("/_qf/logo", async (c) => {
-    const project = resolveProject(projects, c.req.header("host") ?? "");
-    const logo = project?.brand.logo;
-    if (!project || !logo) return notFound(c);
+    const p = project(c.req.header("host"));
+    const logo = p?.brand.logo;
+    if (!p || !logo) return notFound(c);
     // The name was checked on load (plain file name, image extension); the file may have gone since.
-    const file = Bun.file(path.join(project.dir, logo));
+    const file = Bun.file(path.join(p.dir, logo));
     if (!(await file.exists())) return notFound(c);
     const type = IMAGE_TYPES[logo.split(".").pop()!.toLowerCase()]!;
     const headers: Record<string, string> = { "Content-Type": type, "Cache-Control": "public, max-age=3600" };
@@ -92,9 +93,12 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     return c.body(await file.bytes(), 200, headers);
   });
   app.get("/_qf/brand.css", (c) => {
-    const project = resolveProject(projects, c.req.header("host") ?? "");
-    return project ? c.body(renderBrandCss(project.brand), 200, { "Content-Type": "text/css; charset=utf-8" }) : notFound(c);
+    const p = project(c.req.header("host"));
+    return p ? c.body(renderBrandCss(p.brand), 200, { "Content-Type": "text/css; charset=utf-8" }) : notFound(c);
   });
+
+  // Caddy's on-demand TLS asks here before getting a certificate, so unknown names never get one.
+  app.get("/_qf/tls", (c) => (project(c.req.query("domain")) ? c.text("ok") : notFound(c)));
 
   app.get("/:form", (c) => {
     const r = lookup(c);
