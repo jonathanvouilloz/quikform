@@ -72,7 +72,7 @@ const FormDefinitionSchema = z
     privacy: z.string().check(z.minLength(1)),
     submitLabel: z.optional(z.string()),
     thankYou: z.strictObject({ title: z.string(), body: z.string() }),
-    access: z.literal("public"),
+    access: z.enum(["public", "private"]),
     notify: z.strictObject({ telegram: z.boolean() }),
     steps: z.array(Step).check(z.minLength(1)),
   })

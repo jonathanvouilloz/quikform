@@ -95,6 +95,24 @@ test("without QUIKFORM_HOME, home defaults to $XDG_DATA_HOME/quikform", () => {
   expect(fs.existsSync(path.join(xdg, "quikform/projects/x/project.json"))).toBe(true);
 });
 
+test("link create/list/revoke on a private form; refused on a public one; responses --json has link", () => {
+  const home = setup();
+  qf(home, ["form", "put", "--project", "acme", write(home, "f.json", minimal)]);
+  const pub = qf(home, ["link", "create", "--project", "acme", "--form", minimal.id, "--label", "Olivier"]);
+  expect(pub.code).toBe(1);
+  expect(pub.err).toContain("form is public");
+  qf(home, ["form", "put", "--project", "acme", write(home, "p.json", { ...minimal, access: "private" })]);
+  const made = qf(home, ["link", "create", "--project", "acme", "--form", minimal.id, "--label", "Olivier"]);
+  const m = new RegExp(`^https://forms\\.acme\\.test/${minimal.id}\\?k=([A-Za-z0-9_-]{32})$`).exec(made.out.trim());
+  expect(m).not.toBeNull();
+  expect(qf(home, ["link", "create", "--project", "acme", "--form", "nope", "--label", "x"]).code).toBe(1);
+  expect(qf(home, ["link", "list", "--project", "acme"]).out).toContain("Olivier");
+  expect(qf(home, ["link", "revoke", "--project", "acme", m![1]!]).code).toBe(0);
+  expect(qf(home, ["link", "revoke", "--project", "acme", m![1]!]).code).toBe(1);
+  const list = qf(home, ["link", "list", "--project", "acme", "--json"]);
+  expect(JSON.parse(list.out)[0]).toMatchObject({ label: "Olivier", revoked: true, url: `https://forms.acme.test/${minimal.id}?k=${m![1]}` });
+});
+
 test("form put: refuses invalid, bumps version on change, no write when identical", () => {
   const home = setup();
   const target = path.join(home, "projects/acme/forms", `${minimal.id}.json`);
@@ -115,11 +133,12 @@ test("responses: table, --json parses, --form and --limit filter", async () => {
   const home = setup();
   const { openProjectDb } = await import("../../src/store/db");
   const db = openProjectDb(path.join(home, "projects/acme/data.sqlite"));
-  for (let i = 0; i < 3; i++) db.insertResponse({ submissionId: crypto.randomUUID(), formId: i < 2 ? "a" : "b", formVersion: 1, values: { n: `v${i}` } });
+  for (let i = 0; i < 3; i++) db.insertResponse({ submissionId: crypto.randomUUID(), formId: i < 2 ? "a" : "b", formVersion: 1, values: { n: `v${i}` }, link: i === 2 ? "Olivier" : undefined });
   db.close();
   const j = JSON.parse(qf(home, ["responses", "--project", "acme", "--json"]).out);
   expect(j).toHaveLength(3);
-  expect(j[0]).toMatchObject({ form: "b", values: { n: "v2" } });
+  expect(j[0]).toMatchObject({ form: "b", values: { n: "v2" }, link: "Olivier" });
+  expect(j[1].link).toBeNull();
   expect(JSON.parse(qf(home, ["responses", "--project", "acme", "--json", "--form", "a", "--limit", "1"]).out)).toHaveLength(1);
   const table = qf(home, ["responses", "--project", "acme"]).out.trim().split("\n");
   expect(table).toHaveLength(3);

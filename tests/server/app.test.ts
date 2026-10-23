@@ -224,3 +224,48 @@ test("/_qf/tls says 200 only for a host that resolves to a project", async () =>
   expect(await tls("?domain=forms.jonlabs.ch")).toBe(404);
   expect(await tls("")).toBe(404);
 });
+
+function privateSetup() {
+  const s = setup();
+  const priv = { ...def, access: "private" as const };
+  s.project.forms.set(def.id, priv);
+  const token = s.project.db.links.create(def.id, "Olivier");
+  return { ...s, token };
+}
+const get = (app: ReturnType<typeof setup>["app"], url: string) => app.request(url, { headers: { host: "forms.acme.test" } });
+
+test("private form: missing, revoked or other-form token -> same 404 as an unknown form", async () => {
+  const { app, project, token } = privateSetup();
+  const other = project.db.links.create("another-form", "X");
+  const revoked = project.db.links.create(def.id, "Y");
+  project.db.links.revoke(revoked);
+  const unknown = await (await get(app, "/nope")).text();
+  for (const url of [`/${def.id}`, `/${def.id}?k=${other}`, `/${def.id}?k=${revoked}`, `/${def.id}?k=zz`, `/${def.id}/thanks`]) {
+    const r = await get(app, url);
+    expect([url, r.status, await r.text()]).toEqual([url, 404, unknown]);
+  }
+  const ok = await get(app, `/${def.id}?k=${token}`);
+  expect(ok.status).toBe(200);
+  expect(await ok.text()).toContain(`name="_k" value="${token}"`);
+  expect((await get(app, `/${def.id}/thanks?k=${token}`)).status).toBe(200);
+});
+
+test("private form: POST needs _k, 422 keeps it, success stores the link label", async () => {
+  const { app, project, token } = privateSetup();
+  expect((await post(app, good())).status).toBe(404);
+  expect(count(project)).toBe(0);
+  const bad = await post(app, good({ _k: token, name: "" }));
+  expect(bad.status).toBe(422);
+  expect(await bad.text()).toContain(`name="_k" value="${token}"`);
+  const res = await post(app, good({ _k: token }));
+  expect([res.status, res.headers.get("location")]).toEqual([303, `/${def.id}/thanks?k=${token}`]);
+  expect(project.db.listResponses({})[0]!.link).toBe("Olivier");
+});
+
+test("public form ignores k and stores no link", async () => {
+  const { app, project } = setup();
+  const token = project.db.links.create(def.id, "Olivier");
+  expect((await get(app, `/${def.id}?k=${token}`)).status).toBe(200);
+  await post(app, good({ _k: token }));
+  expect(project.db.listResponses({})[0]!.link).toBeUndefined();
+});

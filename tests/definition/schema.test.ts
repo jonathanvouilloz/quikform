@@ -102,3 +102,8 @@ test("rejects constructor as a field id", () => {
   d.steps[0].fields[0].id = "constructor";
   expect(errorsOf(d)).toEqual([`steps.0.fields.0.id: "constructor" is reserved`]);
 });
+
+test("access is public or private, nothing else", () => {
+  expect(parseDefinition({ ...clone(), access: "private" }).ok).toBe(true);
+  expect(errorsOf({ ...clone(), access: "secret" })[0]).toStartWith("access:");
+});

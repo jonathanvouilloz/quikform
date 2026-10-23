@@ -13,6 +13,9 @@ const USAGE = `usage:
   quikform check <file.json>
   quikform form put --project <slug> <file.json>
   quikform responses --project <slug> [--form <id>] [--limit 50] [--json]
+  quikform link create --project <slug> --form <id> --label <text>
+  quikform link list --project <slug> [--form <id>] [--json]
+  quikform link revoke --project <slug> <token>
   quikform project init <slug> [--domain <host>] [--accent #rrggbb] [--name <brand>]
 environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters)
 settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com"}`;
@@ -24,6 +27,7 @@ class Fail extends Error {
 }
 
 const SLUG = /^[a-z][a-z0-9-]{0,47}$/;
+const SLUG_ID = /^[a-z][a-z0-9_-]{0,47}$/;
 const RELOAD_MS = 10_000;
 const PURGE_MS = 24 * 3600_000;
 
@@ -114,13 +118,60 @@ function responses(args: string[]) {
   const db = openProjectDb(path.join(dir, "data.sqlite"));
   try {
     const rows = db.listResponses({ formId: values.form, limit }).map((r) => ({
-      id: r.id, created_at: r.createdAt.toISOString(), form: r.formId, version: r.formVersion, values: r.values,
+      id: r.id, created_at: r.createdAt.toISOString(), form: r.formId, version: r.formVersion, values: r.values, link: r.link ?? null,
     }));
     if (values.json) console.log(JSON.stringify(rows, null, 2));
-    else for (const r of rows) console.log([r.id, r.created_at, r.form, JSON.stringify(r.values)].join("\t"));
+    else for (const r of rows) console.log([r.id, r.created_at, r.form, JSON.stringify(r.values), r.link ?? ""].join("\t"));
   } finally {
     db.close();
   }
+}
+
+// Opens the project's db for one command and always closes it.
+function withDb<T>(dir: string, fn: (db: ReturnType<typeof openProjectDb>) => T): T {
+  const db = openProjectDb(path.join(dir, "data.sqlite"));
+  try {
+    return fn(db);
+  } finally {
+    db.close();
+  }
+}
+
+function linkUrl(dir: string, formId: string, token: string): string {
+  const base = projectUrl({ slug: path.basename(dir), domains: projectDomains(dir) }, settings().baseDomain);
+  if (!base) throw new Fail("project has no domain: set domains in project.json or baseDomain in quikform.json");
+  return `${base}/${formId}?k=${token}`;
+}
+
+function linkCreate(args: string[]) {
+  const { values } = parseArgs({ args, options: { project: { type: "string" }, form: { type: "string" }, label: { type: "string" } } });
+  const dir = projectDir(values.project);
+  if (!values.form || !values.label?.trim()) throw new Fail("--form and --label are required", 2);
+  const file = path.join(dir, "forms", `${values.form}.json`);
+  if (!SLUG_ID.test(values.form) || !fs.existsSync(file)) throw new Fail(`unknown form "${values.form}"`);
+  const r = parseDefinition(JSON.parse(fs.readFileSync(file, "utf8")));
+  if (!r.ok) throw new Fail(`forms/${values.form}.json is invalid: ${r.errors.join("; ")}`);
+  if (r.value.access !== "private") throw new Fail(`form is public: set "access": "private" first`);
+  const token = withDb(dir, (db) => db.links.create(r.value.id, values.label!.trim()));
+  console.log(linkUrl(dir, r.value.id, token));
+}
+
+function linkList(args: string[]) {
+  const { values } = parseArgs({ args, options: { project: { type: "string" }, form: { type: "string" }, json: { type: "boolean" } } });
+  const dir = projectDir(values.project);
+  const rows = withDb(dir, (db) => db.links.list(values.form)).map((l) => ({
+    label: l.label, form: l.formId, created_at: l.createdAt.toISOString(), revoked: l.revoked, token: l.token, url: linkUrl(dir, l.formId, l.token),
+  }));
+  if (values.json) console.log(JSON.stringify(rows, null, 2));
+  else for (const l of rows) console.log([l.label, l.form, l.created_at, l.revoked ? "revoked" : "active", l.url].join("\t"));
+}
+
+function linkRevoke(args: string[]) {
+  const { values, positionals } = parseArgs({ args, options: { project: { type: "string" } }, allowPositionals: true });
+  const dir = projectDir(values.project);
+  if (!positionals[0]) throw new Fail("missing <token>", 2);
+  if (!withDb(dir, (db) => db.links.revoke(positionals[0]!))) throw new Fail("no active link with this token");
+  console.log("revoked");
 }
 
 function projectInit(args: string[]) {
@@ -203,6 +254,7 @@ function serve(args: string[]) {
 
 const commands: Record<string, (args: string[]) => void> = {
   serve, check, "form put": formPut, responses, "project init": projectInit,
+  "link create": linkCreate, "link list": linkList, "link revoke": linkRevoke,
 };
 
 try {

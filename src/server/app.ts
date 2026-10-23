@@ -59,10 +59,14 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     c.header("Cache-Control", "no-store");
     return c.html(html, status);
   };
-  const lookup = (c: Context) => {
+  // A private form exists only for a live token of that same form; anything else is the plain 404.
+  const lookup = (c: Context, token = c.req.query("k")) => {
     const p = project(c.req.header("host"));
     const def = p?.forms.get(c.req.param("form") ?? "");
-    return p && def ? { project: p, def } : undefined;
+    if (!p || !def) return undefined;
+    if (def.access === "public") return { project: p, def };
+    const link = token ? p.db.links.find(token) : undefined;
+    return link?.formId === def.id ? { project: p, def, token: token!, link: link.label } : undefined;
   };
 
   app.use(async (c, next) => {
@@ -102,7 +106,7 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
 
   app.get("/:form", (c) => {
     const r = lookup(c);
-    return r ? page(c, renderFormPage({ def: r.def, brand: r.project.brand, submissionId: crypto.randomUUID(), timestamp: stamp() })) : notFound(c);
+    return r ? page(c, renderFormPage({ def: r.def, brand: r.project.brand, submissionId: crypto.randomUUID(), timestamp: stamp(), linkToken: r.token })) : notFound(c);
   });
 
   app.get("/:form/thanks", (c) => {
@@ -111,8 +115,7 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
   });
 
   app.post("/:form", bodyLimit({ maxSize: 64 * 1024, onError: (c) => c.text("Payload Too Large", 413) }), async (c) => {
-    const r = lookup(c);
-    if (!r) return notFound(c);
+    if (!project(c.req.header("host"))?.forms.has(c.req.param("form"))) return notFound(c);
     if (limited(clientIp(c))) return c.text("Too Many Requests", 429);
     let body: Record<string, unknown>;
     try {
@@ -125,16 +128,18 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
       const strings = [v].flat().filter((x): x is string => typeof x === "string"); // drops File values
       if (strings.length) raw[k] = Array.isArray(v) ? strings : strings[0]!;
     }
+    const r = lookup(c, typeof raw._k === "string" ? raw._k : "");
+    if (!r) return notFound(c);
     // Built on return only: c.redirect sets Location on the shared context.
-    const thanks = () => c.redirect(`/${r.def.id}/thanks`, 303);
+    const thanks = () => c.redirect(`/${r.def.id}/thanks${r.token ? `?k=${encodeURIComponent(r.token)}` : ""}`, 303);
     if (raw[HONEYPOT] || !stampOk(raw._t)) return thanks();
 
     const v = validateResponse(r.def, raw);
     const sid = typeof raw._sid === "string" && UUID.test(raw._sid) ? raw._sid : crypto.randomUUID();
     if (!v.ok) {
-      return page(c, renderFormPage({ def: r.def, brand: r.project.brand, values: raw, errors: v.errors, submissionId: sid, timestamp: stamp() }), 422);
+      return page(c, renderFormPage({ def: r.def, brand: r.project.brand, values: raw, errors: v.errors, submissionId: sid, timestamp: stamp(), linkToken: r.token }), 422);
     }
-    const { inserted, id } = r.project.db.insertResponse({ submissionId: sid, formId: r.def.id, formVersion: r.def.version, values: v.values });
+    const { inserted, id } = r.project.db.insertResponse({ submissionId: sid, formId: r.def.id, formVersion: r.def.version, values: v.values, link: r.link });
     if (inserted && queueAlert(r.project, r.def, id)) {
       flushOutbox(r.project, now()).catch(() => console.error(`quikform: outbox flush failed (project ${r.project.slug})`));
     }
