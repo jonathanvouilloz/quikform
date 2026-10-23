@@ -77,3 +77,31 @@ test("cutoff goes back whole months and clamps the day at month end", () => {
   expect(cutoff(at("2028-03-31"), 1)).toEqual(at("2028-02-29"));
   expect(cutoff(at("2026-01-31"), 2)).toEqual(at("2025-11-30"));
 });
+
+test("links: create gives a 32-char base64url token, find until revoked, list shows both", () => {
+  const db = openProjectDb(tmpDb());
+  const t = db.links.create("contact", "Olivier");
+  expect(t).toMatch(/^[A-Za-z0-9_-]{32}$/);
+  expect(db.links.find(t)).toEqual({ formId: "contact", label: "Olivier" });
+  const u = db.links.create("other", "Anne");
+  expect(db.links.revoke(t)).toBe(true);
+  expect(db.links.revoke("nope")).toBe(false);
+  expect(db.links.find(t)).toBeUndefined();
+  expect(db.links.list().map((l) => [l.label, l.revoked])).toEqual([["Olivier", true], ["Anne", false]]);
+  expect(db.links.list("other").map((l) => l.token)).toEqual([u]);
+});
+
+test("a response keeps its link label; a pre-links database opens and migrates without loss", () => {
+  const file = tmpDb();
+  const old = new Database(file);
+  old.run(`CREATE TABLE responses (id INTEGER PRIMARY KEY, submission_id TEXT NOT NULL UNIQUE, form_id TEXT NOT NULL,
+    form_version INTEGER NOT NULL, values_json TEXT NOT NULL, created_at INTEGER NOT NULL)`);
+  old.run(`INSERT INTO responses (submission_id, form_id, form_version, values_json, created_at) VALUES ('s0', 'contact', 1, '{"name":"old"}', 1)`);
+  old.close();
+  const db = openProjectDb(file);
+  db.insertResponse({ ...base, submissionId: "s1", link: "Olivier" });
+  const [a, b] = db.listResponses({});
+  expect([a!.link, b!.values, b!.link]).toEqual(["Olivier", { name: "old" }, undefined]);
+  db.close();
+  expect(() => openProjectDb(file).close()).not.toThrow(); // second open: column already there
+});

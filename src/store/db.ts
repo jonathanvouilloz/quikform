@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+import { randomBytes } from "node:crypto";
 import type { Values } from "../definition/response";
 
 export type StoredResponse = {
@@ -8,6 +9,7 @@ export type StoredResponse = {
   formVersion: number;
   values: Values;
   createdAt: Date;
+  link?: string;
 };
 export type OutboxItem = { id: number; responseId: number; attempts: number };
 export type NewResponse = {
@@ -16,13 +18,21 @@ export type NewResponse = {
   formVersion: number;
   values: Values;
   createdAt?: Date;
+  link?: string;
 };
+export type Link = { token: string; formId: string; label: string; createdAt: Date; revoked: boolean };
 export type ProjectDb = {
   insertResponse(r: NewResponse): { inserted: boolean; id: number };
   getResponse(id: number): StoredResponse | undefined;
   listResponses(q: { formId?: string; limit?: number }): StoredResponse[];
   purgeOlderThan(date: Date): number;
   close(): void;
+  links: {
+    create(formId: string, label: string): string;
+    find(token: string): { formId: string; label: string } | undefined;
+    list(formId?: string): Link[];
+    revoke(token: string): boolean;
+  };
   outbox: {
     enqueue(responseId: number): void;
     due(now: Date): OutboxItem[];
@@ -38,6 +48,7 @@ type Row = {
   form_version: number;
   values_json: string;
   created_at: number;
+  link: string | null;
 };
 const toResponse = (r: Row): StoredResponse => ({
   id: r.id,
@@ -46,6 +57,7 @@ const toResponse = (r: Row): StoredResponse => ({
   formVersion: r.form_version,
   values: JSON.parse(r.values_json),
   createdAt: new Date(r.created_at),
+  ...(r.link === null ? {} : { link: r.link }),
 });
 
 /** `months` before `now`, the day clamped to the target month's length (Mar 31 - 1 month = Feb 28 or 29). */
@@ -72,6 +84,18 @@ export function openProjectDb(path: string): ProjectDb {
     values_json TEXT NOT NULL,
     created_at INTEGER NOT NULL
   )`);
+  // Added with private links: older databases get the column on open.
+  if (!(db.query("PRAGMA table_info(responses)").all() as { name: string }[]).some((c) => c.name === "link")) {
+    db.run("ALTER TABLE responses ADD COLUMN link TEXT");
+  }
+  // shortcut: tokens stored in plain text so links can be listed again; whoever reads this file already reads the answers. Hash them if links ever grant more than answering.
+  db.run(`CREATE TABLE IF NOT EXISTS links (
+    token TEXT PRIMARY KEY,
+    form_id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    revoked_at INTEGER
+  )`);
   db.run("CREATE INDEX IF NOT EXISTS responses_created_at ON responses (created_at)");
   db.run(`CREATE TABLE IF NOT EXISTS telegram_outbox (
     id INTEGER PRIMARY KEY,
@@ -82,9 +106,13 @@ export function openProjectDb(path: string): ProjectDb {
   )`);
 
   const insert = db.query(
-    `INSERT INTO responses (submission_id, form_id, form_version, values_json, created_at)
-     VALUES (?, ?, ?, ?, ?) ON CONFLICT(submission_id) DO NOTHING`,
+    `INSERT INTO responses (submission_id, form_id, form_version, values_json, created_at, link)
+     VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(submission_id) DO NOTHING`,
   );
+  const linkInsert = db.query("INSERT INTO links (token, form_id, label, created_at) VALUES (?, ?, ?, ?)");
+  const linkFind = db.query("SELECT form_id AS formId, label FROM links WHERE token = ? AND revoked_at IS NULL");
+  const linkList = db.query("SELECT * FROM links WHERE (?1 IS NULL OR form_id = ?1) ORDER BY created_at, rowid");
+  const linkRevoke = db.query("UPDATE links SET revoked_at = ? WHERE token = ? AND revoked_at IS NULL");
   const idOf = db.query("SELECT id FROM responses WHERE submission_id = ?");
   const get = db.query("SELECT * FROM responses WHERE id = ?");
   const list = db.query(
@@ -113,6 +141,7 @@ export function openProjectDb(path: string): ProjectDb {
         r.formVersion,
         JSON.stringify(r.values),
         (r.createdAt ?? new Date()).getTime(),
+        r.link ?? null,
       );
       if (res.changes > 0) return { inserted: true, id: Number(res.lastInsertRowid) };
       return { inserted: false, id: (idOf.get(r.submissionId) as { id: number }).id };
@@ -126,6 +155,19 @@ export function openProjectDb(path: string): ProjectDb {
     },
     purgeOlderThan: (date) => purgeAll(date.getTime()),
     close: () => db.close(),
+    links: {
+      create(formId, label) {
+        const token = randomBytes(24).toString("base64url");
+        linkInsert.run(token, formId, label, Date.now());
+        return token;
+      },
+      find: (token) => (linkFind.get(token) as { formId: string; label: string } | null) ?? undefined,
+      list: (formId) =>
+        (linkList.all(formId ?? null) as { token: string; form_id: string; label: string; created_at: number; revoked_at: number | null }[]).map((l) => ({
+          token: l.token, formId: l.form_id, label: l.label, createdAt: new Date(l.created_at), revoked: l.revoked_at !== null,
+        })),
+      revoke: (token) => linkRevoke.run(Date.now(), token).changes > 0,
+    },
     outbox: {
       enqueue: (responseId) => void enqueue.run(responseId, Date.now()),
       due: (now) => due.all(now.getTime()) as OutboxItem[],

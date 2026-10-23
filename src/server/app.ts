@@ -24,8 +24,9 @@ const RATE_MAX = 10;
 const RATE_WINDOW_MS = 10 * 60_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export function createApp(opts: { projects: Project[]; secret: string; now?: () => Date }): Hono {
-  const { projects, secret } = opts;
+export function createApp(opts: { projects: Project[]; secret: string; now?: () => Date; baseDomain?: string }): Hono {
+  const { projects, secret, baseDomain } = opts;
+  const project = (host: string | undefined) => resolveProject(projects, host ?? "", baseDomain);
   const now = opts.now ?? (() => new Date());
   const app = new Hono();
   // shortcut: fixed window per IP, in memory; resets on restart. Upgrade if the server ever runs on several processes.
@@ -58,10 +59,14 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     c.header("Cache-Control", "no-store");
     return c.html(html, status);
   };
-  const lookup = (c: Context) => {
-    const project = resolveProject(projects, c.req.header("host") ?? "");
-    const def = project?.forms.get(c.req.param("form") ?? "");
-    return project && def ? { project, def } : undefined;
+  // A private form exists only for a live token of that same form; anything else is the plain 404.
+  const lookup = (c: Context, token = c.req.query("k")) => {
+    const p = project(c.req.header("host"));
+    const def = p?.forms.get(c.req.param("form") ?? "");
+    if (!p || !def) return undefined;
+    if (def.access === "public") return { project: p, def };
+    const link = token ? p.db.links.find(token) : undefined;
+    return link?.formId === def.id ? { project: p, def, token: token!, link: link.label } : undefined;
   };
 
   app.use(async (c, next) => {
@@ -80,11 +85,11 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     return c.body(await Bun.file(f).bytes(), 200, { "Content-Type": "font/woff2", "Cache-Control": "public, max-age=31536000, immutable" });
   });
   app.get("/_qf/logo", async (c) => {
-    const project = resolveProject(projects, c.req.header("host") ?? "");
-    const logo = project?.brand.logo;
-    if (!project || !logo) return notFound(c);
+    const p = project(c.req.header("host"));
+    const logo = p?.brand.logo;
+    if (!p || !logo) return notFound(c);
     // The name was checked on load (plain file name, image extension); the file may have gone since.
-    const file = Bun.file(path.join(project.dir, logo));
+    const file = Bun.file(path.join(p.dir, logo));
     if (!(await file.exists())) return notFound(c);
     const type = IMAGE_TYPES[logo.split(".").pop()!.toLowerCase()]!;
     const headers: Record<string, string> = { "Content-Type": type, "Cache-Control": "public, max-age=3600" };
@@ -92,13 +97,16 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
     return c.body(await file.bytes(), 200, headers);
   });
   app.get("/_qf/brand.css", (c) => {
-    const project = resolveProject(projects, c.req.header("host") ?? "");
-    return project ? c.body(renderBrandCss(project.brand), 200, { "Content-Type": "text/css; charset=utf-8" }) : notFound(c);
+    const p = project(c.req.header("host"));
+    return p ? c.body(renderBrandCss(p.brand), 200, { "Content-Type": "text/css; charset=utf-8" }) : notFound(c);
   });
+
+  // Caddy's on-demand TLS asks here before getting a certificate, so unknown names never get one.
+  app.get("/_qf/tls", (c) => (project(c.req.query("domain")) ? c.text("ok") : notFound(c)));
 
   app.get("/:form", (c) => {
     const r = lookup(c);
-    return r ? page(c, renderFormPage({ def: r.def, brand: r.project.brand, submissionId: crypto.randomUUID(), timestamp: stamp() })) : notFound(c);
+    return r ? page(c, renderFormPage({ def: r.def, brand: r.project.brand, submissionId: crypto.randomUUID(), timestamp: stamp(), linkToken: r.token })) : notFound(c);
   });
 
   app.get("/:form/thanks", (c) => {
@@ -107,6 +115,7 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
   });
 
   app.post("/:form", bodyLimit({ maxSize: 64 * 1024, onError: (c) => c.text("Payload Too Large", 413) }), async (c) => {
+    // Token checked first, from the URL (the form posts to its own page): a private form must not answer 400 or 429 to strangers.
     const r = lookup(c);
     if (!r) return notFound(c);
     if (limited(clientIp(c))) return c.text("Too Many Requests", 429);
@@ -121,16 +130,17 @@ export function createApp(opts: { projects: Project[]; secret: string; now?: () 
       const strings = [v].flat().filter((x): x is string => typeof x === "string"); // drops File values
       if (strings.length) raw[k] = Array.isArray(v) ? strings : strings[0]!;
     }
+    if (r.token && raw._k !== r.token) return notFound(c);
     // Built on return only: c.redirect sets Location on the shared context.
-    const thanks = () => c.redirect(`/${r.def.id}/thanks`, 303);
+    const thanks = () => c.redirect(`/${r.def.id}/thanks${r.token ? `?k=${encodeURIComponent(r.token)}` : ""}`, 303);
     if (raw[HONEYPOT] || !stampOk(raw._t)) return thanks();
 
     const v = validateResponse(r.def, raw);
     const sid = typeof raw._sid === "string" && UUID.test(raw._sid) ? raw._sid : crypto.randomUUID();
     if (!v.ok) {
-      return page(c, renderFormPage({ def: r.def, brand: r.project.brand, values: raw, errors: v.errors, submissionId: sid, timestamp: stamp() }), 422);
+      return page(c, renderFormPage({ def: r.def, brand: r.project.brand, values: raw, errors: v.errors, submissionId: sid, timestamp: stamp(), linkToken: r.token }), 422);
     }
-    const { inserted, id } = r.project.db.insertResponse({ submissionId: sid, formId: r.def.id, formVersion: r.def.version, values: v.values });
+    const { inserted, id } = r.project.db.insertResponse({ submissionId: sid, formId: r.def.id, formVersion: r.def.version, values: v.values, link: r.link });
     if (inserted && queueAlert(r.project, r.def, id)) {
       flushOutbox(r.project, now()).catch(() => console.error(`quikform: outbox flush failed (project ${r.project.slug})`));
     }

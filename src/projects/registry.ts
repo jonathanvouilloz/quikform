@@ -24,7 +24,7 @@ const LOGO = /^(?!.*\.\.)[^/\\]+\.(png|jpe?g|webp|svg)$/i;
 const LOGO_MAX_BYTES = 200 * 1024;
 // Strict objects: a stray key (a botToken in particular) rejects the whole file.
 const ProjectConfig = z.strictObject({
-  domains: z.array(Hostname).check(z.minLength(1)),
+  domains: z._default(z.array(Hostname), []),
   brand: z.strictObject({
     name: z.string().check(z.minLength(1)),
     logo: z.optional(z.string().check(z.regex(LOGO))),
@@ -33,6 +33,18 @@ const ProjectConfig = z.strictObject({
   retentionMonths: z._default(z.int().check(z.positive()), 12),
   telegram: z.optional(z.strictObject({ chatId: z.string(), threadId: z.optional(z.int()) })),
 });
+
+export type Settings = { baseDomain?: string };
+const SettingsFile = z.strictObject({ baseDomain: z.optional(Hostname) });
+
+// Server-wide settings in $QUIKFORM_HOME/quikform.json; a missing file means none. Throws on an invalid file.
+export function readSettings(home: string): Settings {
+  const file = path.join(home, "quikform.json");
+  if (!fs.existsSync(file)) return {};
+  const parsed = z.safeParse(SettingsFile, JSON.parse(fs.readFileSync(file, "utf8")));
+  if (!parsed.success) throw new Error(`quikform.json: ${parsed.error.issues.map(formatIssue).join("; ")}`);
+  return parsed.data.baseDomain ? { baseDomain: parsed.data.baseDomain.toLowerCase() } : {};
+}
 
 // Bun only auto-loads .env from the cwd, so read the project's own file.
 function readToken(file: string): string | undefined {
@@ -64,11 +76,12 @@ function loadForms(dir: string, loadErrors: string[]): Map<string, FormDefinitio
 }
 
 // Throws when project.json is missing or invalid. An already-open db can be passed in (reload keeps its handle).
-export function loadProject(dir: string, db?: ProjectDb): Project {
+export function loadProject(dir: string, db?: ProjectDb, baseDomain?: string): Project {
   const parsed = z.safeParse(ProjectConfig, JSON.parse(fs.readFileSync(path.join(dir, "project.json"), "utf8")));
   if (!parsed.success) throw new Error(parsed.error.issues.map(formatIssue).join("; "));
   const config = parsed.data;
   const loadErrors: string[] = [];
+  if (!config.domains.length && !baseDomain) loadErrors.push("no domain: set domains in project.json or baseDomain in quikform.json");
   let telegram: Project["telegram"];
   if (config.telegram) {
     const botToken = readToken(path.join(dir, ".env"));
@@ -99,7 +112,7 @@ export function loadProject(dir: string, db?: ProjectDb): Project {
 
 // Brings `projects` (mutated in place, as createApp and the outbox loop hold it) in line with the disk.
 // `seen` remembers each folder's signature; a changed one is reloaded, a failed reload keeps the previous version.
-export function syncProjects(home: string, projects: Project[], seen: Map<string, string>): void {
+export function syncProjects(home: string, projects: Project[], seen: Map<string, string>, baseDomain?: string): void {
   const root = path.join(home, "projects");
   const slugs = fs.existsSync(root) ? fs.readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
   const mtime = (f: string) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } };
@@ -110,7 +123,7 @@ export function syncProjects(home: string, projects: Project[], seen: Map<string
     seen.set(slug, sig);
     const i = projects.findIndex((p) => p.slug === slug);
     try {
-      const p = loadProject(dir, projects[i]?.db);
+      const p = loadProject(dir, projects[i]?.db, baseDomain);
       if (i >= 0) projects[i] = p;
       else projects.push(p);
       for (const e of p.loadErrors) console.error(`quikform: project "${slug}": ${e}`);
@@ -125,13 +138,19 @@ export function syncProjects(home: string, projects: Project[], seen: Map<string
   }
 }
 
-export function loadProjects(home: string): Project[] {
+export function loadProjects(home: string, baseDomain?: string): Project[] {
   const projects: Project[] = [];
-  syncProjects(home, projects, new Map());
+  syncProjects(home, projects, new Map(), baseDomain);
   return projects;
 }
 
-export function resolveProject(projects: Project[], host: string): Project | undefined {
+// A project answers on its own domains and, when baseDomain is set, on <slug>.<baseDomain>.
+export function resolveProject(projects: Project[], host: string, baseDomain?: string): Project | undefined {
   const name = host.toLowerCase().replace(/:\d+$/, "");
-  return projects.find((p) => p.domains.includes(name));
+  return projects.find((p) => p.domains.includes(name) || (baseDomain !== undefined && name === `${p.slug}.${baseDomain}`));
+}
+
+export function projectUrl(p: { slug: string; domains: string[] }, baseDomain?: string): string | undefined {
+  if (p.domains[0]) return `https://${p.domains[0]}`;
+  return baseDomain ? `https://${p.slug}.${baseDomain}` : undefined;
 }

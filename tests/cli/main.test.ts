@@ -76,14 +76,51 @@ test("project init writes project.json and forms/, refuses an existing project a
   expect(qf(home, ["project", "init", "../evil", "--domain", "x.test"]).code).toBe(1);
 });
 
+test("project init without --domain needs baseDomain; form put prints the shared-domain url", () => {
+  const home = tmp();
+  expect(qf(home, ["project", "init", "demo"]).code).toBe(2);
+  fs.writeFileSync(path.join(home, "quikform.json"), JSON.stringify({ baseDomain: "forms.test" }));
+  expect(qf(home, ["project", "init", "demo"]).code).toBe(0);
+  expect(JSON.parse(fs.readFileSync(path.join(home, "projects/demo/project.json"), "utf8")).domains).toEqual([]);
+  const put = qf(home, ["form", "put", "--project", "demo", write(home, "f.json", minimal)]);
+  expect(put.out.trim().split("\n")).toEqual([`ok ${minimal.id} v1`, `url https://demo.forms.test/${minimal.id}`]);
+});
+
+test("without QUIKFORM_HOME, home defaults to $XDG_DATA_HOME/quikform", () => {
+  const xdg = tmp();
+  const r = Bun.spawnSync(["bun", path.join(root, "src/cli/main.ts"), "project", "init", "x", "--domain", "x.test"], {
+    env: { PATH: process.env.PATH!, XDG_DATA_HOME: xdg },
+  });
+  expect(r.exitCode).toBe(0);
+  expect(fs.existsSync(path.join(xdg, "quikform/projects/x/project.json"))).toBe(true);
+});
+
+test("link create/list/revoke on a private form; refused on a public one; responses --json has link", () => {
+  const home = setup();
+  qf(home, ["form", "put", "--project", "acme", write(home, "f.json", minimal)]);
+  const pub = qf(home, ["link", "create", "--project", "acme", "--form", minimal.id, "--label", "Olivier"]);
+  expect(pub.code).toBe(1);
+  expect(pub.err).toContain("form is public");
+  qf(home, ["form", "put", "--project", "acme", write(home, "p.json", { ...minimal, access: "private" })]);
+  const made = qf(home, ["link", "create", "--project", "acme", "--form", minimal.id, "--label", "Olivier"]);
+  const m = new RegExp(`^https://forms\\.acme\\.test/${minimal.id}\\?k=([A-Za-z0-9_-]{32})$`).exec(made.out.trim());
+  expect(m).not.toBeNull();
+  expect(qf(home, ["link", "create", "--project", "acme", "--form", "nope", "--label", "x"]).code).toBe(1);
+  expect(qf(home, ["link", "list", "--project", "acme"]).out).toContain("Olivier");
+  expect(qf(home, ["link", "revoke", "--project", "acme", m![1]!]).code).toBe(0);
+  expect(qf(home, ["link", "revoke", "--project", "acme", m![1]!]).code).toBe(1);
+  const list = qf(home, ["link", "list", "--project", "acme", "--json"]);
+  expect(JSON.parse(list.out)[0]).toMatchObject({ label: "Olivier", revoked: true, url: `https://forms.acme.test/${minimal.id}?k=${m![1]}` });
+});
+
 test("form put: refuses invalid, bumps version on change, no write when identical", () => {
   const home = setup();
   const target = path.join(home, "projects/acme/forms", `${minimal.id}.json`);
   const f = write(home, "f.json", minimal);
-  expect(qf(home, ["form", "put", "--project", "acme", f]).out.trim()).toBe(`ok ${minimal.id} v1`);
+  expect(qf(home, ["form", "put", "--project", "acme", f]).out.trim()).toBe(`ok ${minimal.id} v1\nurl https://forms.acme.test/${minimal.id}`);
   expect(qf(home, ["form", "put", "--project", "acme", f]).out.trim()).toBe(`unchanged ${minimal.id} v1`);
   const changed = write(home, "g.json", { ...minimal, title: "Changed title" });
-  expect(qf(home, ["form", "put", "--project", "acme", changed]).out.trim()).toBe(`ok ${minimal.id} v2`);
+  expect(qf(home, ["form", "put", "--project", "acme", changed]).out.split("\n")[0]).toBe(`ok ${minimal.id} v2`);
   expect(JSON.parse(fs.readFileSync(target, "utf8")).version).toBe(2);
   const before = fs.readFileSync(target, "utf8");
   const bad = qf(home, ["form", "put", "--project", "acme", write(home, "h.json", { id: minimal.id })]);
@@ -96,11 +133,12 @@ test("responses: table, --json parses, --form and --limit filter", async () => {
   const home = setup();
   const { openProjectDb } = await import("../../src/store/db");
   const db = openProjectDb(path.join(home, "projects/acme/data.sqlite"));
-  for (let i = 0; i < 3; i++) db.insertResponse({ submissionId: crypto.randomUUID(), formId: i < 2 ? "a" : "b", formVersion: 1, values: { n: `v${i}` } });
+  for (let i = 0; i < 3; i++) db.insertResponse({ submissionId: crypto.randomUUID(), formId: i < 2 ? "a" : "b", formVersion: 1, values: { n: `v${i}` }, link: i === 2 ? "Olivier" : undefined });
   db.close();
   const j = JSON.parse(qf(home, ["responses", "--project", "acme", "--json"]).out);
   expect(j).toHaveLength(3);
-  expect(j[0]).toMatchObject({ form: "b", values: { n: "v2" } });
+  expect(j[0]).toMatchObject({ form: "b", values: { n: "v2" }, link: "Olivier" });
+  expect(j[1].link).toBeNull();
   expect(JSON.parse(qf(home, ["responses", "--project", "acme", "--json", "--form", "a", "--limit", "1"]).out)).toHaveLength(1);
   const table = qf(home, ["responses", "--project", "acme"]).out.trim().split("\n");
   expect(table).toHaveLength(3);
@@ -130,7 +168,26 @@ test("serve refuses a missing or short secret without echoing it", () => {
   const r = qf(home, ["serve"], { QUIKFORM_SECRET: "short-secret" });
   expect(r.code).toBe(1);
   expect(r.err + r.out).not.toContain("short-secret");
-  expect(qf("", ["serve"], { QUIKFORM_HOME: "", QUIKFORM_SECRET: "x".repeat(40) }).code).toBe(1);
+  // Without QUIKFORM_HOME the default home is used; a short secret is still refused before anything listens.
+  expect(qf("", ["serve"], { QUIKFORM_HOME: "", XDG_DATA_HOME: tmp(), QUIKFORM_SECRET: "x" }).code).toBe(1);
+});
+
+test("serve --host sets the listening address (127.0.0.1 by default); a bad host is a usage error", async () => {
+  const home = setup();
+  const start = async (extra: string[]) => {
+    const proc = Bun.spawn(["bun", path.join(root, "src/cli/main.ts"), "serve", "--port", "0", ...extra], {
+      env: { PATH: process.env.PATH!, QUIKFORM_HOME: home, QUIKFORM_SECRET: "s".repeat(40) }, stdout: "pipe", stderr: "pipe",
+    });
+    try {
+      return await untilListening(proc);
+    } finally {
+      proc.kill();
+      await proc.exited;
+    }
+  };
+  expect(await start([])).toContain("listening on 127.0.0.1:");
+  expect(await start(["--host", "0.0.0.0"])).toContain("listening on 0.0.0.0:");
+  expect(qf(home, ["serve", "--host", "not a host"], { QUIKFORM_SECRET: "s".repeat(40) }).code).toBe(2);
 });
 
 test("compiled binary serves /_qf/app.js and a font with their bytes, and exits 0 on SIGTERM", async () => {

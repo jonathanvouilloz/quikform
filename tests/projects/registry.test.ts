@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import minimal from "../fixtures/minimal.json";
-import { loadProjects, resolveProject, syncProjects, type Project } from "../../src/projects/registry";
+import { loadProjects, projectUrl, readSettings, resolveProject, syncProjects, type Project } from "../../src/projects/registry";
 
 const dirs: string[] = [];
 function home(files: Record<string, unknown>): string {
@@ -47,6 +47,41 @@ test("resolveProject matches host case-insensitively, ignores port", () => {
   expect(resolveProject(ps, "FORMS.example.com:8080")?.slug).toBe("a");
   expect(resolveProject(ps, "other.test")?.slug).toBe("b");
   expect(resolveProject(ps, "nope.test")).toBeUndefined();
+});
+
+test("resolveProject: <slug>.<baseDomain> finds a project without domains, nothing deeper or bare", () => {
+  const h = home({ "club/project.json": { brand: pj.brand }, "a/project.json": pj });
+  const ps = loadProjects(h);
+  expect(ps.find((p) => p.slug === "club")?.domains).toEqual([]);
+  expect(resolveProject(ps, "CLUB.forms.example.org:443", "forms.example.org")?.slug).toBe("club");
+  expect(resolveProject(ps, "forms.example.com", "forms.example.org")?.slug).toBe("a");
+  expect(resolveProject(ps, "forms.example.org", "forms.example.org")).toBeUndefined();
+  expect(resolveProject(ps, "x.club.forms.example.org", "forms.example.org")).toBeUndefined();
+  expect(resolveProject(ps, "club.forms.example.org")).toBeUndefined();
+});
+
+test("a project with no domain and no baseDomain loads with a load error", () => {
+  const [p] = loadProjects(home({ "club/project.json": { brand: pj.brand } }));
+  expect(p!.loadErrors).toContain("no domain: set domains in project.json or baseDomain in quikform.json");
+  const [q] = loadProjects(home({ "club/project.json": { brand: pj.brand } }), "forms.example.org");
+  expect(q!.loadErrors).toEqual([]);
+});
+
+test("projectUrl: first explicit domain, else slug under baseDomain, else undefined", () => {
+  expect(projectUrl({ slug: "w", domains: ["formulaire.w.com"] }, "forms.example.org")).toBe("https://formulaire.w.com");
+  expect(projectUrl({ slug: "club", domains: [] }, "forms.example.org")).toBe("https://club.forms.example.org");
+  expect(projectUrl({ slug: "club", domains: [] })).toBeUndefined();
+});
+
+test("readSettings: missing file is {}, valid baseDomain is lowercased, bad file throws", () => {
+  const h = home({});
+  expect(readSettings(h)).toEqual({});
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ baseDomain: "Forms.Example.org" }));
+  expect(readSettings(h)).toEqual({ baseDomain: "forms.example.org" });
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ baseDomain: "not a host" }));
+  expect(() => readSettings(h)).toThrow();
+  fs.writeFileSync(path.join(h, "quikform.json"), JSON.stringify({ baseDomain: "a.test", extra: 1 }));
+  expect(() => readSettings(h)).toThrow();
 });
 
 test("token is read from the project's .env, never from project.json", () => {

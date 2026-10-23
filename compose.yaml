@@ -1,0 +1,15 @@
+# docker compose up -d --build   (needs QUIKFORM_SECRET in .env next to this file)
+services:
+  quikform:
+    build: .
+    restart: unless-stopped
+    environment:
+      QUIKFORM_SECRET: ${QUIKFORM_SECRET:?set QUIKFORM_SECRET (32+ characters) in .env}
+    ports:
+      - "127.0.0.1:8787:8787" # only your reverse proxy on the same machine reaches it
+    volumes:
+      - quikform-data:/data # projects, forms, answers (data.sqlite) and quikform.json
+    mem_limit: 150m
+
+volumes:
+  quikform-data:

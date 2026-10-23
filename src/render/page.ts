@@ -70,6 +70,7 @@ export function renderFormPage(input: {
   errors?: Record<string, string>;
   submissionId: string;
   timestamp: string;
+  linkToken?: string;
 }): string {
   const { def, brand, values = {}, errors = {} } = input;
   const say = (key: Parameters<typeof t>[2], vars?: Record<string, number>) => t(def.lang, def.address, key, vars);
@@ -105,6 +106,7 @@ export function renderFormPage(input: {
     `<form method="post" novalidate class="qf-form">` +
     `<input type="hidden" name="_sid" value="${e(input.submissionId)}">` +
     `<input type="hidden" name="_t" value="${e(input.timestamp)}">` +
+    (input.linkToken ? `<input type="hidden" name="_k" value="${e(input.linkToken)}">` : "") +
     // Honeypot: off-screen, out of the tab order and hidden from assistive tech; only bots fill it.
     `<div class="qf-hp" aria-hidden="true"><input type="text" name="${HONEYPOT}" id="qf:${HONEYPOT}" tabindex="-1" autocomplete="off"></div>` +
     steps +

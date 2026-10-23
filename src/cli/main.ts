@@ -1,19 +1,24 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { parseDefinition } from "../definition/schema";
 import { startOutboxLoop } from "../notify/telegram";
-import { HOSTNAME, syncProjects, type Project } from "../projects/registry";
+import { HOSTNAME, projectUrl, readSettings, syncProjects, type Project } from "../projects/registry";
 import { createApp } from "../server/app";
 import { cutoff, openProjectDb } from "../store/db";
 
 const USAGE = `usage:
-  quikform serve [--port 8787]
+  quikform serve [--port 8787] [--host 127.0.0.1]
   quikform check <file.json>
   quikform form put --project <slug> <file.json>
   quikform responses --project <slug> [--form <id>] [--limit 50] [--json]
-  quikform project init <slug> --domain <host> [--accent #rrggbb] [--name <brand>]
-environment: QUIKFORM_HOME (all but check), QUIKFORM_SECRET (serve, 32+ characters)`;
+  quikform link create --project <slug> --form <id> --label <text>
+  quikform link list --project <slug> [--form <id>] [--json]
+  quikform link revoke --project <slug> <token>
+  quikform project init <slug> [--domain <host>] [--accent #rrggbb] [--name <brand>]
+environment: QUIKFORM_HOME (default ~/.local/share/quikform), QUIKFORM_SECRET (serve, 32+ characters)
+settings: $QUIKFORM_HOME/quikform.json, e.g. {"baseDomain": "forms.example.com"}`;
 
 class Fail extends Error {
   constructor(message: string, readonly code = 1) {
@@ -22,13 +27,21 @@ class Fail extends Error {
 }
 
 const SLUG = /^[a-z][a-z0-9-]{0,47}$/;
+const SLUG_ID = /^[a-z][a-z0-9_-]{0,47}$/;
 const RELOAD_MS = 10_000;
 const PURGE_MS = 24 * 3600_000;
 
 function home(): string {
-  const h = process.env.QUIKFORM_HOME;
-  if (!h) throw new Fail("QUIKFORM_HOME is not set");
-  return h;
+  const data = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share");
+  return process.env.QUIKFORM_HOME || path.join(data, "quikform");
+}
+
+function settings() {
+  try {
+    return readSettings(home());
+  } catch (e) {
+    throw new Fail(e instanceof Error ? e.message : String(e));
+  }
 }
 
 // Resolves only $QUIKFORM_HOME/projects/<slug>; the slug pattern rules out any path separator.
@@ -50,6 +63,14 @@ function readDefinition(file: string | undefined) {
   const r = parseDefinition(raw);
   if (!r.ok) throw new Fail(r.errors.join("\n"));
   return { raw: raw as Record<string, unknown>, def: r.value };
+}
+
+function projectDomains(dir: string): string[] {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(dir, "project.json"), "utf8")).domains ?? [];
+  } catch {
+    return [];
+  }
 }
 
 function check(args: string[]) {
@@ -82,6 +103,8 @@ function formPut(args: string[]) {
   fs.writeFileSync(tmp, JSON.stringify({ ...raw, version }, null, 2) + "\n");
   fs.renameSync(tmp, target);
   console.log(`ok ${def.id} v${version}`);
+  const url = projectUrl({ slug: path.basename(dir), domains: projectDomains(dir) }, settings().baseDomain);
+  if (url) console.log(`url ${url}/${def.id}`);
 }
 
 function responses(args: string[]) {
@@ -95,13 +118,60 @@ function responses(args: string[]) {
   const db = openProjectDb(path.join(dir, "data.sqlite"));
   try {
     const rows = db.listResponses({ formId: values.form, limit }).map((r) => ({
-      id: r.id, created_at: r.createdAt.toISOString(), form: r.formId, version: r.formVersion, values: r.values,
+      id: r.id, created_at: r.createdAt.toISOString(), form: r.formId, version: r.formVersion, values: r.values, link: r.link ?? null,
     }));
     if (values.json) console.log(JSON.stringify(rows, null, 2));
-    else for (const r of rows) console.log([r.id, r.created_at, r.form, JSON.stringify(r.values)].join("\t"));
+    else for (const r of rows) console.log([r.id, r.created_at, r.form, JSON.stringify(r.values), r.link ?? ""].join("\t"));
   } finally {
     db.close();
   }
+}
+
+// Opens the project's db for one command and always closes it.
+function withDb<T>(dir: string, fn: (db: ReturnType<typeof openProjectDb>) => T): T {
+  const db = openProjectDb(path.join(dir, "data.sqlite"));
+  try {
+    return fn(db);
+  } finally {
+    db.close();
+  }
+}
+
+function linkUrl(dir: string, formId: string, token: string): string {
+  const base = projectUrl({ slug: path.basename(dir), domains: projectDomains(dir) }, settings().baseDomain);
+  if (!base) throw new Fail("project has no domain: set domains in project.json or baseDomain in quikform.json");
+  return `${base}/${formId}?k=${token}`;
+}
+
+function linkCreate(args: string[]) {
+  const { values } = parseArgs({ args, options: { project: { type: "string" }, form: { type: "string" }, label: { type: "string" } } });
+  const dir = projectDir(values.project);
+  if (!values.form || !values.label?.trim()) throw new Fail("--form and --label are required", 2);
+  const file = path.join(dir, "forms", `${values.form}.json`);
+  if (!SLUG_ID.test(values.form) || !fs.existsSync(file)) throw new Fail(`unknown form "${values.form}"`);
+  const r = parseDefinition(JSON.parse(fs.readFileSync(file, "utf8")));
+  if (!r.ok) throw new Fail(`forms/${values.form}.json is invalid: ${r.errors.join("; ")}`);
+  if (r.value.access !== "private") throw new Fail(`form is public: set "access": "private" first`);
+  const token = withDb(dir, (db) => db.links.create(r.value.id, values.label!.trim()));
+  console.log(linkUrl(dir, r.value.id, token));
+}
+
+function linkList(args: string[]) {
+  const { values } = parseArgs({ args, options: { project: { type: "string" }, form: { type: "string" }, json: { type: "boolean" } } });
+  const dir = projectDir(values.project);
+  const rows = withDb(dir, (db) => db.links.list(values.form)).map((l) => ({
+    label: l.label, form: l.formId, created_at: l.createdAt.toISOString(), revoked: l.revoked, token: l.token, url: linkUrl(dir, l.formId, l.token),
+  }));
+  if (values.json) console.log(JSON.stringify(rows, null, 2));
+  else for (const l of rows) console.log([l.label, l.form, l.created_at, l.revoked ? "revoked" : "active", l.url].join("\t"));
+}
+
+function linkRevoke(args: string[]) {
+  const { values, positionals } = parseArgs({ args, options: { project: { type: "string" } }, allowPositionals: true });
+  const dir = projectDir(values.project);
+  if (!positionals[0]) throw new Fail("missing <token>", 2);
+  if (!withDb(dir, (db) => db.links.revoke(positionals[0]!))) throw new Fail("no active link with this token");
+  console.log("revoked");
 }
 
 function projectInit(args: string[]) {
@@ -112,14 +182,16 @@ function projectInit(args: string[]) {
   });
   const slug = positionals[0];
   if (!slug || !SLUG.test(slug)) throw new Fail(`invalid project slug "${slug ?? ""}"`);
-  if (!values.domain || !HOSTNAME.test(values.domain)) throw new Fail("--domain must be a hostname, e.g. forms.example.com", 2);
+  if (values.domain === undefined ? !settings().baseDomain : !HOSTNAME.test(values.domain)) {
+    throw new Fail("--domain must be a hostname, e.g. forms.example.com (optional once baseDomain is set in quikform.json)", 2);
+  }
   if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(values.accent)) throw new Fail("--accent must be #rgb or #rrggbb", 2);
   const root = path.join(home(), "projects");
   fs.mkdirSync(root, { recursive: true });
   const dir = path.join(root, slug);
   if (fs.existsSync(dir)) throw new Fail(`project "${slug}" already exists`);
   fs.mkdirSync(path.join(dir, "forms"), { recursive: true });
-  const config = { domains: [values.domain.toLowerCase()], brand: { name: values.name ?? slug, accent: values.accent }, retentionMonths: 12 };
+  const config = { domains: values.domain ? [values.domain.toLowerCase()] : [], brand: { name: values.name ?? slug, accent: values.accent }, retentionMonths: 12 };
   fs.writeFileSync(path.join(dir, "project.json"), JSON.stringify(config, null, 2) + "\n");
   console.log(`ok project ${slug} created in ${dir}`);
 }
@@ -145,9 +217,11 @@ const guarded = (name: string, fn: () => void) => () => {
 };
 
 function serve(args: string[]) {
-  const { values } = parseArgs({ args, options: { port: { type: "string", default: "8787" } } });
+  const { values } = parseArgs({ args, options: { port: { type: "string", default: "8787" }, host: { type: "string", default: "127.0.0.1" } } });
   const port = Number(values.port);
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Fail("--port must be 0-65535", 2);
+  // 127.0.0.1 unless told otherwise: in a container, 0.0.0.0 with the port published on the host's loopback only.
+  if (!/^[0-9a-f:.]+$/i.test(values.host) && !HOSTNAME.test(values.host)) throw new Fail("--host must be an IP address or hostname", 2);
   const h = home();
   const secret = process.env.QUIKFORM_SECRET ?? "";
   if (secret.length < 32) throw new Fail("QUIKFORM_SECRET must be set to at least 32 characters");
@@ -156,14 +230,16 @@ function serve(args: string[]) {
   process.on("SIGTERM", () => stop());
   process.on("SIGINT", () => stop());
 
+  // Read once: changing baseDomain needs a restart.
+  const { baseDomain } = settings();
   const projects: Project[] = [];
   const seen = new Map<string, string>();
-  const reload = guarded("reload", () => syncProjects(h, projects, seen));
+  const reload = guarded("reload", () => syncProjects(h, projects, seen, baseDomain));
   const purgeAll = guarded("purge", () => purge(projects));
   reload();
   purgeAll();
-  const server = Bun.serve({ hostname: "127.0.0.1", port, fetch: createApp({ projects, secret }).fetch });
-  console.log(`listening on 127.0.0.1:${server.port}`);
+  const server = Bun.serve({ hostname: values.host, port, fetch: createApp({ projects, secret, baseDomain }).fetch });
+  console.log(`listening on ${values.host}:${server.port}`);
   // Load errors were already logged by syncProjects.
   for (const p of projects) console.log(`project ${p.slug}: ${p.forms.size} forms`);
 
@@ -180,6 +256,7 @@ function serve(args: string[]) {
 
 const commands: Record<string, (args: string[]) => void> = {
   serve, check, "form put": formPut, responses, "project init": projectInit,
+  "link create": linkCreate, "link list": linkList, "link revoke": linkRevoke,
 };
 
 try {

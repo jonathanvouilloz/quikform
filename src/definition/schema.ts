@@ -72,7 +72,7 @@ const FormDefinitionSchema = z
     privacy: z.string().check(z.minLength(1)),
     submitLabel: z.optional(z.string()),
     thankYou: z.strictObject({ title: z.string(), body: z.string() }),
-    access: z.literal("public"),
+    access: z.enum(["public", "private"]),
     notify: z.strictObject({ telegram: z.boolean() }),
     steps: z.array(Step).check(z.minLength(1)),
   })
@@ -105,11 +105,19 @@ export type FormDefinition = z.output<typeof FormDefinitionSchema>;
 export function parseDefinition(
   input: unknown,
 ): { ok: true; value: FormDefinition } | { ok: false; errors: string[] } {
-  const r = z.safeParse(FormDefinitionSchema, input);
+  const r = z.safeParse(FormDefinitionSchema, input, { reportInput: true });
   if (r.success) return { ok: true, value: r.data };
   return { ok: false, errors: r.error.issues.map(formatIssue) };
 }
 
-/** One readable line per issue: zod/mini says "Invalid input" for unknown keys and leaves a root path empty. */
-export const formatIssue = (i: z.core.$ZodIssue) =>
-  `${i.path.join(".") || "(root)"}: ${i.code === "unrecognized_keys" ? `unrecognized keys ${i.keys.join(", ")}` : i.message}`;
+const kind = (v: unknown) => (v === null ? "null" : Array.isArray(v) ? "array" : typeof v);
+
+/** One readable line per issue: zod/mini says only "Invalid input" (no locale) and leaves a root path empty. */
+export const formatIssue = (i: z.core.$ZodIssue) => {
+  const what =
+    i.code === "unrecognized_keys" ? `unrecognized keys ${i.keys.join(", ")}`
+    : i.code === "invalid_type" && i.input === undefined ? `required (expected ${i.expected})`
+    : i.code === "invalid_type" && "input" in i ? `expected ${i.expected}, got ${kind(i.input)}`
+    : i.message;
+  return `${i.path.join(".") || "(root)"}: ${what}`;
+};
