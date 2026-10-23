@@ -8,7 +8,8 @@ import { renderAnswers, renderForms, renderLogin, renderProjects, type AdminLang
 
 export type AdminConfig = { host: string; passwordHash: string; lang: AdminLang };
 
-const COOKIE = "qf_admin";
+// __Host-: only this exact host can set it, so a sibling subdomain cannot shadow it.
+const COOKIE = "__Host-qf_admin";
 const SESSION_MS = 30 * 24 * 3600_000;
 const ID = /^[a-z][a-z0-9_-]{0,47}$/;
 
@@ -22,7 +23,7 @@ export function createAdmin(opts: {
 }): Hono {
   const { config, projects, secret, now } = opts;
   const { lang, passwordHash } = config;
-  const blocked = createLoginLimiter();
+  const limiter = createLoginLimiter();
   const app = new Hono();
 
   app.use(async (c, next) => {
@@ -36,12 +37,15 @@ export function createAdmin(opts: {
   app.get("/login", (c) => c.html(renderLogin(lang)));
   app.post("/login", bodyLimit({ maxSize: 4096, onError: (c) => c.text("Payload Too Large", 413) }), async (c) => {
     const ip = opts.clientIp(c);
-    if (blocked(ip, now().getTime())) return c.html(renderLogin(lang, "tooMany"), 429);
+    if (limiter.blocked(ip, now().getTime())) return c.html(renderLogin(lang, "tooMany"), 429);
     const body = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
     const password = typeof body.password === "string" ? body.password : "";
     const ok = password !== "" && (await Bun.password.verify(password, passwordHash).catch(() => false));
     console.log(`quikform: admin login ${ok ? "ok" : "failed"} from ${ip}`);
-    if (!ok) return c.html(renderLogin(lang, "wrong"), 401);
+    if (!ok) {
+      limiter.fail(ip, now().getTime());
+      return c.html(renderLogin(lang, "wrong"), 401);
+    }
     const expires = now().getTime() + SESSION_MS;
     setCookie(c, COOKIE, signSession(secret, passwordHash, expires), {
       httpOnly: true, secure: true, sameSite: "Strict", path: "/", maxAge: SESSION_MS / 1000,
@@ -49,6 +53,8 @@ export function createAdmin(opts: {
     return c.redirect("/", 303);
   });
   app.post("/logout", (c) => {
+    // SameSite does not cover a plain cross-site POST that only clears the cookie.
+    if (c.req.header("sec-fetch-site") === "cross-site") return c.text("Forbidden", 403);
     deleteCookie(c, COOKIE, { path: "/", secure: true });
     return c.redirect("/login", 303);
   });

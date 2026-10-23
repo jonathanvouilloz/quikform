@@ -69,7 +69,7 @@ test("wrong password: 401, no cookie; right password: 303 and a strict cookie", 
   const ok = await login(app);
   expect([ok.status, ok.headers.get("location")]).toEqual([303, "/"]);
   const cookie = ok.headers.get("set-cookie")!;
-  for (const attr of ["qf_admin=", "HttpOnly", "Secure", "SameSite=Strict", "Path=/", "Max-Age=2592000"]) expect(cookie).toContain(attr);
+  for (const attr of ["__Host-qf_admin=", "HttpOnly", "Secure", "SameSite=Strict", "Path=/", "Max-Age=2592000"]) expect(cookie).toContain(attr);
 });
 
 test("the 11th login attempt from one IP is 429, even with the right password", async () => {
@@ -116,7 +116,7 @@ test("logout clears the cookie; a forged cookie goes back to /login", async () =
   const cookie = await session(app);
   const out = await req(app, "/logout", { method: "POST", cookie });
   expect(out.headers.get("set-cookie")).toContain("Max-Age=0");
-  const forged = await req(app, "/", { cookie: "qf_admin=9999999999999.abc" });
+  const forged = await req(app, "/", { cookie: "__Host-qf_admin=9999999999999.abc" });
   expect(forged.status).toBe(303);
 });
 
@@ -131,4 +131,15 @@ test("/_qf/tls allows the admin host only when the admin is configured", async (
   const off = setup(false).app;
   expect((await on.request("/_qf/tls?domain=admin.test")).status).toBe(200);
   expect((await off.request("/_qf/tls?domain=admin.test")).status).toBe(404);
+});
+
+test("a cross-site POST /logout does not sign out", async () => {
+  const { app } = setup();
+  const r = await app.request("/logout", { method: "POST", headers: { host: "admin.test", "sec-fetch-site": "cross-site" } });
+  expect([r.status, r.headers.get("set-cookie")]).toEqual([403, null]);
+});
+
+test("a successful sign-in does not count toward the limit", async () => {
+  const { app } = setup();
+  for (let i = 0; i < 12; i++) expect((await login(app)).status).toBe(303);
 });

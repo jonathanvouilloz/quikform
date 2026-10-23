@@ -344,7 +344,7 @@ Turn it on:
    With Docker: `read -rs P && printf %s "$P" | docker compose run --rm -T quikform admin hash-password`. In a `.env` file used by Compose, double every `$` of the hash (`$$argon2id$$...`), or Compose reads it as a variable.
 3. Point the host at the server: a DNS record and a Caddy block (`forms.example.com { reverse_proxy 127.0.0.1:8787 }`), or add it to the on-demand block of the shared domain. `/_qf/tls` accepts the admin host. Restart `serve`.
 
-Without both `adminHost` and the hash, the admin does not exist (404). Sign-in sets an `HttpOnly`, `Secure`, `SameSite=Strict` cookie for 30 days, signed with `QUIKFORM_SECRET`; changing the password or the secret signs everyone out. Ten wrong passwords from one IP block sign-in for 15 minutes. Admin pages are never cached and ask search engines not to index them. Dates use the server's time zone (set `TZ`, for example `TZ=Europe/Zurich`, in the service environment).
+Without both `adminHost` and the hash, the admin does not exist (404). Sign-in sets an `HttpOnly`, `Secure`, `SameSite=Strict` cookie for 30 days, signed with `QUIKFORM_SECRET`; changing the password or the secret signs everyone out. "Sign out" only clears the current browser: to cut off a session on a lost device, change the password. Ten wrong passwords from one IP (or one IPv6 /64) block it for 15 minutes, and 50 wrong passwords in 15 minutes from anywhere block every sign-in for the rest of that window: use a long random password. Admin pages are never cached and ask search engines not to index them. Dates use the server's time zone (set `TZ`, for example `TZ=Europe/Zurich`, in the service environment).
 
 ## What `serve` does while it runs
 
@@ -352,7 +352,7 @@ Without both `adminHost` and the hash, the admin does not exist (404). Sign-in s
 - Every 10 seconds, reloads a project whose `project.json`, `.env` or `forms/` listing changed. An invalid file is logged and the previous version keeps running.
 - Once a day (and at start), deletes answers older than the project's `retentionMonths`.
 - Sends Telegram alerts from a queue stored in the database, retrying after 1, 5, 30 and then every 60 minutes if Telegram fails. An alert is never sent twice, and alert texts and tokens never appear in the logs.
-- Uses `QUIKFORM_SECRET` to sign the time each form page was served, so a submission sent less than 3 seconds after loading the page is refused. Changing the secret only invalidates pages that are open at that moment.
+- Uses `QUIKFORM_SECRET` to sign the time each form page was served, so a submission sent less than 3 seconds after loading the page is refused. Changing the secret invalidates pages that are open at that moment and, with the admin on, every admin session. Keep the file that holds it readable only by the service user (`chmod 600`).
 - Refuses request bodies over 64 KB and more than 10 submissions per IP in 10 minutes. The IP is the last entry of `X-Forwarded-For`, which is right when exactly one proxy (Caddy) sits in front.
 - Sends a strict Content Security Policy: every page loads only quikform's own CSS, script, font and logo.
 
