@@ -69,7 +69,7 @@
           <li><h3>Your agent writes a JSON file</h3><p>Fields, steps, conditions, the thank-you message and the privacy note. No HTML, no scripts.</p></li>
           <li><h3><code>quikform check</code> reads it</h3><p>Every mistake comes back with its exact path in the file, so the agent fixes it before anyone sees the form.</p></li>
           <li><h3><code>form put</code> publishes it</h3><p>The form is live on your domain within ten seconds. Its version goes up each time the content changes.</p></li>
-          <li><h3>Answers come back</h3><p>Each answer is validated again on the server, saved to SQLite and, if you like, sent to a Telegram group. <code>quikform responses</code> gives them to your agent as JSON.</p></li>
+          <li><h3>Answers come back</h3><p>Each answer is validated again on the server, saved to SQLite and, if you like, sent to a Telegram group. <code>quikform responses</code> gives them to your agent as JSON, and you can read them yourself in the admin.</p></li>
         </ol>
         <fieldset class="tabs">
           <legend>Show one stage of the example</legend>
@@ -149,8 +149,8 @@
         </li>
         <li>
           <h3>A questionnaire for one client</h3>
-          <p>Prices, services, opening hours: everything an agent needs to know about a business, asked in steps instead of a long email thread. quikform's first real form was exactly this, for a gym.</p>
-          <span class="fields">number · multiple_choice · long_text</span>
+          <p>Prices, services, opening hours: everything an agent needs to know about a business, asked in steps instead of a long email thread. Each person gets their own private link, and the admin shows who has answered.</p>
+          <span class="fields">number · multiple_choice · link create</span>
         </li>
         <li>
           <h3>Class or event sign-up</h3>
@@ -204,6 +204,14 @@
           <dd>A Telegram message for each answer. A privacy note on every form, and answers deleted after 12 months by default.</dd>
           <dt>Four languages</dt>
           <dd>Interface text in English, French, German and Thai, set per form.</dd>
+          <dt>Public or private</dt>
+          <dd>A public form answers anyone with its address. A private form answers only the links you create, one per person and revocable, and each answer records which link it came from.</dd>
+          <dt>A read-only admin</dt>
+          <dd>Behind a password, on a phone or a computer: your projects, their forms, who has answered, the links to share with a Copy button, and every answer question by question. It changes nothing; forms and links stay with your agent.</dd>
+          <dt>One domain for every project</dt>
+          <dd>Set a base domain once and each project answers on its own subdomain, such as <code>gym.forms.example.com</code>, with its HTTPS certificate fetched on the first visit. A project can also keep a domain of its own.</dd>
+          <dt>A skill for your agent</dt>
+          <dd><code>skills/quikform/SKILL.md</code> tells your agent when to use quikform and walks it through writing, checking, publishing, private links and reading answers. Link it into Claude Code, or point any other agent at it.</dd>
         </dl>
         <div class="sticky">
 <pre class="code"><code><span class="c"># one project per domain</span>
@@ -217,6 +225,10 @@
     onboarding.json
 <span class="p">$ </span>quikform responses --project northwind --json
 
+<span class="c"># a private form: one link per person</span>
+<span class="p">$ </span>quikform link create --project northwind \
+    --form onboarding --label "Maya"
+
 <span class="c"># the server, behind Caddy or any reverse proxy</span>
 <span class="p">$ </span>quikform serve --port 8787</code></pre>
           <p class="note">Each command works on one project only. Exit codes: 0 success, 1 failure, 2 usage error.</p>
@@ -229,10 +241,19 @@
     <div class="wrap install">
       <div>
         <h2 id="install-h" class="h2">Install</h2>
-        <p>quikform builds from source with <a href="https://bun.sh">Bun</a> 1.4 or later. The result is one file, <code>dist/quikform</code>, to copy onto your server.</p>
-        <p>It listens on 127.0.0.1 only: put Caddy or another reverse proxy in front for HTTPS. The README covers the systemd unit and the Caddy block.</p>
+        <p>The quickest way is the ready-made Docker image, <code>ghcr.io/jonathanvouilloz/quikform</code>, for Linux amd64 and arm64: no clone and no build.</p>
+        <p>Without Docker, build one executable from source with <a href="https://bun.sh">Bun</a> 1.4 or later and copy <code>dist/quikform</code> onto your server.</p>
+        <p>quikform listens on 127.0.0.1 only: put Caddy or another reverse proxy in front for HTTPS. The README covers the systemd unit, the Caddy block and turning on the admin.</p>
       </div>
-<pre class="code"><code><span class="p">$ </span>git clone https://github.com/jonathanvouilloz/quikform
+<pre class="code"><code><span class="c"># with Docker</span>
+<span class="p">$ </span>mkdir quikform &amp;&amp; cd quikform
+<span class="p">$ </span>curl -fsSLO \
+    https://raw.githubusercontent.com/jonathanvouilloz/quikform/main/compose.yaml
+<span class="p">$ </span>echo "QUIKFORM_SECRET=$(openssl rand -hex 32)" &gt; .env
+<span class="p">$ </span>docker compose up -d
+
+<span class="c"># or from source, with Bun</span>
+<span class="p">$ </span>git clone https://github.com/jonathanvouilloz/quikform
 <span class="p">$ </span>cd quikform
 <span class="p">$ </span>bun install
 <span class="p">$ </span>bun run build        <span class="c"># writes dist/quikform</span>

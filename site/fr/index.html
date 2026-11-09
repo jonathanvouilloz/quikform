@@ -69,7 +69,7 @@
           <li><h3>Votre agent écrit un fichier JSON</h3><p>Les champs, les étapes, les conditions, le message de remerciement et la mention de confidentialité. Aucun HTML ni script.</p></li>
           <li><h3><code>quikform check</code> le relit</h3><p>Chaque erreur revient avec son emplacement exact dans le fichier : l’agent la corrige avant que quiconque voie le formulaire.</p></li>
           <li><h3><code>form put</code> le publie</h3><p>Le formulaire est en ligne sur votre domaine en dix secondes. Sa version augmente à chaque changement de contenu.</p></li>
-          <li><h3>Les réponses reviennent</h3><p>Chaque réponse est validée une seconde fois sur le serveur, enregistrée dans SQLite et, si vous le voulez, envoyée dans un groupe Telegram. <code>quikform responses</code> les donne à votre agent en JSON.</p></li>
+          <li><h3>Les réponses reviennent</h3><p>Chaque réponse est validée une seconde fois sur le serveur, enregistrée dans SQLite et, si vous le voulez, envoyée dans un groupe Telegram. <code>quikform responses</code> les donne à votre agent en JSON, et vous les lisez vous-même dans l’admin.</p></li>
         </ol>
         <fieldset class="tabs">
           <legend>Afficher une étape de l’exemple</legend>
@@ -149,8 +149,8 @@
         </li>
         <li>
           <h3>Un questionnaire pour un seul client</h3>
-          <p>Tarifs, services, horaires : tout ce qu’un agent doit savoir sur une entreprise, demandé par étapes au lieu d’un long échange d’emails. Le premier vrai formulaire de quikform, c’était exactement ça, pour une salle de sport.</p>
-          <span class="fields">number · multiple_choice · long_text</span>
+          <p>Tarifs, services, horaires : tout ce qu’un agent doit savoir sur une entreprise, demandé par étapes au lieu d’un long échange d’emails. Chaque personne reçoit son propre lien privé, et l’admin montre qui a répondu.</p>
+          <span class="fields">number · multiple_choice · link create</span>
         </li>
         <li>
           <h3>Inscription à un cours ou un événement</h3>
@@ -204,6 +204,14 @@
           <dd>Un message Telegram à chaque réponse. Une mention de confidentialité sur chaque formulaire, et des réponses supprimées après 12 mois par défaut.</dd>
           <dt>Quatre langues</dt>
           <dd>Textes de l’interface en anglais, français, allemand et thaï, choisis par formulaire.</dd>
+          <dt>Public ou privé</dt>
+          <dd>Un formulaire public répond à toute personne qui a son adresse. Un formulaire privé ne répond qu’aux liens que vous créez, un par personne et révocable, et chaque réponse garde le lien d’où elle vient.</dd>
+          <dt>Une admin en lecture seule</dt>
+          <dd>Derrière un mot de passe, sur téléphone ou sur ordinateur : vos projets, leurs formulaires, qui a répondu, les liens à partager avec un bouton Copier, et chaque réponse question par question. Elle ne modifie rien ; formulaires et liens restent l’affaire de votre agent.</dd>
+          <dt>Un domaine pour tous les projets</dt>
+          <dd>Réglez une fois un domaine de base et chaque projet répond sur son propre sous-domaine, comme <code>salle.formulaire.example.com</code>, avec un certificat HTTPS obtenu à la première visite. Un projet peut aussi garder son propre domaine.</dd>
+          <dt>Un skill pour votre agent</dt>
+          <dd><code>skills/quikform/SKILL.md</code> indique à votre agent quand utiliser quikform et le guide pour écrire, vérifier, publier, créer des liens privés et lire les réponses. Liez-le dans Claude Code, ou indiquez-le à tout autre agent.</dd>
         </dl>
         <div class="sticky">
 <pre class="code"><code><span class="c"># un projet par domaine</span>
@@ -217,6 +225,10 @@
     accueil.json
 <span class="p">$ </span>quikform responses --project northwind --json
 
+<span class="c"># un formulaire privé : un lien par personne</span>
+<span class="p">$ </span>quikform link create --project northwind \
+    --form accueil --label "Maya"
+
 <span class="c"># le serveur, derrière Caddy ou un autre proxy</span>
 <span class="p">$ </span>quikform serve --port 8787</code></pre>
           <p class="note">Chaque commande ne touche qu’un seul projet. Codes de sortie : 0 succès, 1 échec, 2 erreur d’utilisation.</p>
@@ -229,10 +241,19 @@
     <div class="wrap install">
       <div>
         <h2 id="install-h" class="h2">Installation</h2>
-        <p>quikform se compile depuis les sources avec <a href="https://bun.sh">Bun</a> 1.4 ou plus récent. Le résultat est un seul fichier, <code>dist/quikform</code>, à copier sur votre serveur.</p>
-        <p>Il n’écoute que sur 127.0.0.1 : placez Caddy ou un autre proxy devant pour le HTTPS. Le README détaille le service systemd et le bloc Caddy.</p>
+        <p>Le plus rapide est l’image Docker toute prête, <code>ghcr.io/jonathanvouilloz/quikform</code>, pour Linux amd64 et arm64 : rien à cloner ni à compiler.</p>
+        <p>Sans Docker, compilez un seul exécutable depuis les sources avec <a href="https://bun.sh">Bun</a> 1.4 ou plus récent, puis copiez <code>dist/quikform</code> sur votre serveur.</p>
+        <p>quikform n’écoute que sur 127.0.0.1 : placez Caddy ou un autre proxy devant pour le HTTPS. Le README détaille le service systemd, le bloc Caddy et l’activation de l’admin.</p>
       </div>
-<pre class="code"><code><span class="p">$ </span>git clone https://github.com/jonathanvouilloz/quikform
+<pre class="code"><code><span class="c"># avec Docker</span>
+<span class="p">$ </span>mkdir quikform &amp;&amp; cd quikform
+<span class="p">$ </span>curl -fsSLO \
+    https://raw.githubusercontent.com/jonathanvouilloz/quikform/main/compose.yaml
+<span class="p">$ </span>echo "QUIKFORM_SECRET=$(openssl rand -hex 32)" &gt; .env
+<span class="p">$ </span>docker compose up -d
+
+<span class="c"># ou depuis les sources, avec Bun</span>
+<span class="p">$ </span>git clone https://github.com/jonathanvouilloz/quikform
 <span class="p">$ </span>cd quikform
 <span class="p">$ </span>bun install
 <span class="p">$ </span>bun run build        <span class="c"># écrit dist/quikform</span>
